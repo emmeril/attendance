@@ -67,6 +67,22 @@ app.post(['/iclock/devicecmd', '/iclock/devicecmd.aspx'], (req, res) => res.type
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: true, legacyHeaders: false });
 const isAuthenticated = (req, res, next) => req.session.user ? next() : (req.path.startsWith('/api/') ? res.status(401).json({ error: 'Unauthenticated' }) : res.redirect('/login'));
 
+function saveEmployeeMachineMappings(employeeId, mappings) {
+  if (!mappings || typeof mappings !== 'object') return;
+  const remove = db.prepare('DELETE FROM employee_device_ids WHERE employee_id = ? AND device_id = ?');
+  const add = db.prepare('INSERT OR IGNORE INTO employee_device_ids (employee_id, device_id, device_user_id) VALUES (?, ?, ?)');
+  const update = db.transaction(() => {
+    for (const [deviceId, value] of Object.entries(mappings)) {
+      const id = Number(deviceId);
+      const userId = String(value || '').trim();
+      if (!Number.isInteger(id) || id <= 0) continue;
+      remove.run(employeeId, id);
+      if (userId) add.run(employeeId, id, userId);
+    }
+  });
+  update();
+}
+
 app.use((req, res, next) => {
   const publicUrl = new URL(config.appUrl);
   res.locals.user = req.session.user;
@@ -104,15 +120,26 @@ app.get('/api/dashboard', isAuthenticated, (req, res) => {
   res.json({ date, stats, recent });
 });
 
-app.get('/api/employees', isAuthenticated, (req, res) => res.json(db.prepare(`SELECT e.*, s.name shift_name FROM employees e LEFT JOIN shifts s ON s.id=e.shift_id ORDER BY e.name`).all()));
+app.get('/api/employees', isAuthenticated, (req, res) => res.json(db.prepare(`
+  SELECT e.*, s.name shift_name,
+    COALESCE((
+      SELECT GROUP_CONCAT(d.name || ': ' || x.device_user_id, ' | ')
+      FROM employee_device_ids x JOIN devices d ON d.id=x.device_id
+      WHERE x.employee_id=e.id
+    ), e.device_user_id) AS machine_user_ids
+  FROM employees e
+  LEFT JOIN shifts s ON s.id=e.shift_id
+  ORDER BY e.name
+`).all()));
 app.post('/api/employees', isAuthenticated, (req, res) => {
   const schema = z.object({ employee_code: z.string().min(1), name: z.string().min(1), department: z.string().optional(), position: z.string().optional(), email: z.string().optional(), phone: z.string().optional(), shift_id: z.preprocess((value) => value === '' || value == null ? undefined : Number(value), z.number().int().positive().optional()), device_user_id: z.string().optional() });
   const parsed = schema.safeParse(req.body); if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-  try { const x = parsed.data; const result = db.prepare(`INSERT INTO employees (employee_code,name,department,position,email,phone,shift_id,device_user_id) VALUES (?,?,?,?,?,?,?,?)`).run(x.employee_code,x.name,x.department||null,x.position||null,x.email||null,x.phone||null,x.shift_id||null,x.device_user_id||null); res.status(201).json({ id: result.lastInsertRowid }); } catch (e) { res.status(400).json({ error: e.message }); }
+  try { const x = parsed.data; const result = db.prepare(`INSERT INTO employees (employee_code,name,department,position,email,phone,shift_id,device_user_id) VALUES (?,?,?,?,?,?,?,?)`).run(x.employee_code,x.name,x.department||null,x.position||null,x.email||null,x.phone||null,x.shift_id||null,x.device_user_id||null); saveEmployeeMachineMappings(result.lastInsertRowid, req.body.machine_mappings); res.status(201).json({ id: result.lastInsertRowid }); } catch (e) { res.status(400).json({ error: e.message }); }
 });
 app.put('/api/employees/:id', isAuthenticated, (req, res) => {
-  const x = req.body; try { db.prepare(`UPDATE employees SET employee_code=?,name=?,department=?,position=?,email=?,phone=?,shift_id=?,device_user_id=?,is_active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).run(x.employee_code,x.name,x.department||null,x.position||null,x.email||null,x.phone||null,x.shift_id||null,x.device_user_id||null,x.is_active === false ? 0 : 1, req.params.id); res.json({ ok: true }); } catch (e) { res.status(400).json({ error: e.message }); }
+  const x = req.body; try { db.prepare(`UPDATE employees SET employee_code=?,name=?,department=?,position=?,email=?,phone=?,shift_id=?,device_user_id=?,is_active=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`).run(x.employee_code,x.name,x.department||null,x.position||null,x.email||null,x.phone||null,x.shift_id||null,x.device_user_id||null,x.is_active === false ? 0 : 1, req.params.id); saveEmployeeMachineMappings(req.params.id, x.machine_mappings); res.json({ ok: true }); } catch (e) { res.status(400).json({ error: e.message }); }
 });
+app.get('/api/employees/:id/mappings', isAuthenticated, (req, res) => res.json(Object.fromEntries(db.prepare('SELECT device_id, device_user_id FROM employee_device_ids WHERE employee_id = ?').all(req.params.id).map(row => [row.device_id, row.device_user_id]))));
 app.delete('/api/employees/:id', isAuthenticated, (req, res) => { try { const result=db.prepare('DELETE FROM employees WHERE id=?').run(req.params.id); if(!result.changes) return res.status(404).json({error:'Karyawan tidak ditemukan'}); res.json({ok:true}); } catch(e) { res.status(400).json({error:e.message}); } });
 
 app.get('/api/shifts', isAuthenticated, (req, res) => res.json(db.prepare('SELECT * FROM shifts ORDER BY name').all()));

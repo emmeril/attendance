@@ -161,7 +161,7 @@
                                     <label class="inline-filter date-filter"><span>Dari</span><input type="date" class="form-control" x-model="from" @change="applyAttendanceDates()"></label>
                                     <label class="inline-filter date-filter"><span>Sampai</span><input type="date" class="form-control" x-model="to" @change="applyAttendanceDates()"></label>
                                     <label class="inline-filter period-filter"><span>Periode</span><select class="form-select" x-model="attendanceRange" @change="setAttendanceRange(attendanceRange)"><option value="custom">Pilih tanggal</option><option value="7">7 hari</option><option value="30">30 hari</option><option value="90">90 hari</option><option value="all">Semua data</option></select></label>
-                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, kode, tanggal..." x-model="queries.attendance" @input="resetPage('attendance')"></label>
+                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, NIK, tanggal..." x-model="queries.attendance" @input="resetPage('attendance')"></label>
                                     <select class="form-select toolbar-select" x-model="filters.attendance" @change="resetPage('attendance')"><option value="">Semua status</option><option value="hadir">Hadir</option><option value="terlambat">Terlambat</option></select>
                                     <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.attendance" @change="resetPage('attendance')"><option :value="10">10</option><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label>
                                 </div>
@@ -172,6 +172,7 @@
                                             <tr>
                                                 <th>Tanggal</th>
                                                 <th>Karyawan</th>
+                                                <th>NIK</th>
                                                 <th>Shift</th>
                                                 <th>Masuk</th>
                                                 <th>Pulang</th>
@@ -183,9 +184,8 @@
                                         <tbody><template x-for="row in pagedData('attendance',attendance)" :key="row.id">
                                                 <tr>
                                                     <td x-text="row.attendance_date"></td>
-                                                    <td><strong x-text="row.name"></strong><small
-                                                            class="d-block text-muted"
-                                                            x-text="row.employee_code"></small></td>
+                                                    <td><strong x-text="row.name"></strong></td>
+                                                    <td><code x-text="row.employee_code || '—'"></code></td>
                                                     <td x-text="row.shift_name || '—'"></td>
                                                     <td x-text="formatDate(row.check_in)"></td>
                                                     <td x-text="formatDate(row.check_out)"></td>
@@ -195,7 +195,7 @@
                                                     <td x-text="row.late_minutes + ' mnt'"></td>
                                                     <td class="table-actions"><button class="icon-action" title="Edit" @click="editAttendance(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteAttendance(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
-                                            </template><tr x-show="!attendanceLoading && !filteredData('attendance',attendance).length"><td colspan="8" class="empty-state"><i class="fa-regular fa-folder-open"></i><span x-text="attendance.length ? 'Data tidak cocok dengan pencarian atau status yang dipilih.' : 'Belum ada data absensi pada rentang tanggal ini.'"></span></td></tr><tr x-show="attendanceLoading"><td colspan="8" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><span>Memuat data absensi...</span></td></tr></tbody>
+                                            </template><tr x-show="!attendanceLoading && !filteredData('attendance',attendance).length"><td colspan="9" class="empty-state"><i class="fa-regular fa-folder-open"></i><span x-text="attendance.length ? 'Data tidak cocok dengan pencarian atau status yang dipilih.' : 'Belum ada data absensi pada rentang tanggal ini.'"></span></td></tr><tr x-show="attendanceLoading"><td colspan="9" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><span>Memuat data absensi...</span></td></tr></tbody>
                                     </table>
                                 </div>
                                 <div class="data-footer"><span x-text="rangeText('attendance',attendance)"></span><div class="pager"><button @click="changePage('attendance',attendance,-1)" :disabled="pages.attendance<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.attendance"></strong> / <span x-text="pageCount('attendance',attendance)"></span></span><button @click="changePage('attendance',attendance,1)" :disabled="pages.attendance>=pageCount('attendance',attendance)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
@@ -208,11 +208,11 @@
                                         <p class="eyebrow mb-1">PEOPLE DIRECTORY</p>
                                         <h5>Daftar karyawan</h5>
                                     </div><button class="btn btn-primary"
-                                        @click="editingEmployee=null; employeeForm={employee_code:'',name:'',department:'',position:'',shift_id:'',device_user_id:''}; employeeModal=true"><i class="fa-solid fa-plus"></i>
+                                        @click="editingEmployee=null; employeeForm={employee_code:'',name:'',department:'',position:'',shift_id:'',device_user_id:'',machine_mappings:{}}; employeeModal=true"><i class="fa-solid fa-plus"></i>
                                         Tambah karyawan</button>
                                 </div>
                                 <div class="data-toolbar">
-                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, employee code, ID mesin..." x-model="queries.employees" @input="resetPage('employees')"></label>
+                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, NIK, ID mesin..." x-model="queries.employees" @input="resetPage('employees')"></label>
                                     <select class="form-select toolbar-select" x-model="filters.employees" @change="resetPage('employees')"><option value="">Semua departemen</option><template x-for="value in uniqueValues(employees,'department')" :key="value"><option :value="value" x-text="value"></option></template></select>
                                     <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.employees" @change="resetPage('employees')"><option :value="10">10</option><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label>
                                 </div>
@@ -220,11 +220,11 @@
                                     <table class="table align-middle">
                                         <thead>
                                             <tr>
-                                                <th>Employee Code</th>
+                                                <th>NIK</th>
                                                 <th>Nama</th>
                                                 <th>Departemen</th>
                                                 <th>Shift</th>
-                                                <th>ID perangkat</th>
+                                                <th>Nomor Mesin</th>
                                                 <th>Aksi</th>
                                             </tr>
                                         </thead>
@@ -236,7 +236,7 @@
                                                             x-text="row.position || ''"></small></td>
                                                     <td x-text="row.department || '—'"></td>
                                                     <td x-text="row.shift_name || '—'"></td>
-                                                    <td x-text="row.device_user_id || '—'"></td>
+                                                    <td><small class="machine-id-list" x-text="row.machine_user_ids || row.device_user_id || '—'"></small></td>
                                                     <td class="table-actions"><button class="icon-action" title="Edit" @click="editEmployee(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteEmployee(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
                                             </template><tr x-show="!filteredData('employees',employees).length"><td colspan="6" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Karyawan tidak ditemukan.</span></td></tr></tbody>
@@ -356,8 +356,8 @@
                 <h5 x-text="editingEmployee ? 'Edit karyawan' : 'Tambah karyawan'"></h5><button type="button" class="modal-close" aria-label="Tutup" @click="employeeModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
-                <div class="col-sm-4"><label>Employee Code</label><input class="form-control"
-                        x-model="employeeForm.employee_code" placeholder="Contoh: EMP-001" required></div>
+                <div class="col-sm-4"><label>NIK <small class="field-hint">Nomor identitas resmi, satu per karyawan</small></label><input class="form-control"
+                        x-model="employeeForm.employee_code" placeholder="Contoh: 3201234567890001" required></div>
                 <div class="col-sm-8"><label>Nama lengkap</label><input class="form-control" x-model="employeeForm.name"
                         required></div>
                 <div class="col-sm-6"><label>Departemen</label><input class="form-control"
@@ -369,8 +369,9 @@
                             <option :value="shift.id" x-text="shift.name"></option>
                         </template>
                     </select></div>
-                <div class="col-sm-6"><label>PIN / User ID di mesin</label><input class="form-control"
+                <div class="col-sm-6"><label>Nomor mesin utama <small class="field-hint">PIN / User ID</small></label><input class="form-control"
                         x-model="employeeForm.device_user_id"></div>
+                <div class="col-12" x-show="devices.length"><label>Nomor mesin per perangkat <small class="field-hint">PIN/User ID tiap mesin boleh berbeda, tetapi diarahkan ke NIK yang sama</small></label><div class="row g-2"><template x-for="device in devices" :key="device.id"><div class="col-sm-6"><div class="machine-map-field"><span x-text="device.name"></span><input class="form-control" placeholder="Contoh: 237" x-model="employeeForm.machine_mappings[device.id]"></div></div></template></div></div>
             </div><button class="btn btn-primary w-100 mt-4">Simpan karyawan</button>
         </form>
     </div>
