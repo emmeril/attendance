@@ -387,7 +387,7 @@
                 <div class="col-sm-6"><label>Nomor mesin utama <small class="field-hint">PIN / User ID</small></label><input class="form-control"
                         x-model="employeeForm.device_user_id"></div>
                 <div class="col-sm-6"><label>Gaji pokok bulanan</label><input type="number" min="0" class="form-control" x-model.number="employeeForm.base_salary"></div>
-                <div class="col-sm-3"><label>Status pajak</label><select class="form-select" x-model="employeeForm.tax_status"><option>TK/0</option><option>TK/1</option><option>TK/2</option><option>TK/3</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
+                <div class="col-sm-3"><label>Status pajak</label><select class="form-select" x-model="employeeForm.tax_status"><option>TK/0</option><option>TK/1</option><option>TK/2</option><option>TK/3</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select><small class="tax-status-note"><strong>TK</strong> = tidak kawin, <strong>K</strong> = kawin. Angka 0-3 adalah jumlah tanggungan pajak.</small></div>
                 <div class="col-sm-3"><label>Tarif PPh 21/TER (%)</label><input type="number" min="0" step="0.01" class="form-control" x-model.number="employeeForm.pph21_rate"></div>
                 <div class="col-sm-6"><label>Nomor BPJS Kesehatan</label><input class="form-control" x-model="employeeForm.bpjs_health_number"></div>
                 <div class="col-sm-6"><label>Nomor BPJS Ketenagakerjaan</label><input class="form-control" x-model="employeeForm.bpjs_employment_number"></div>
