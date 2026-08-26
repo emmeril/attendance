@@ -231,8 +231,6 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
 .bpjs-profile small { color: #9aa6a2; white-space: nowrap; }
 .bpjs-profile small.is-complete { color: #197151; }
 .bpjs-profile i { width: 14px; }
-.machine-map-field { display: grid; gap: .35rem; padding: .7rem; background: #f3f6f1; border: 1px solid #dce6dd; border-radius: 11px; }
-.machine-map-field > span { color: var(--ink-soft); font-size: .72rem; font-weight: 700; }
 .payroll-settings { display: grid; grid-template-columns: repeat(5,minmax(120px,1fr)) auto; align-items: end; gap: .65rem; margin-bottom: 1rem; padding: .8rem; background: #f3f6f1; border: 1px solid #e0e7df; border-radius: 14px; }
 .payroll-settings label { display: grid; gap: .3rem; margin: 0; font-size: .68rem; font-weight: 700; }
 .table-actions { white-space: nowrap; }
@@ -344,7 +342,12 @@ label { color: var(--ink-soft); }
 
 .modal-shell { position: fixed; z-index: 1080; inset: 0; display: grid; place-items: center; padding: 1rem; background: var(--modal-overlay); backdrop-filter: blur(7px); }
 .modal-card { width: min(650px, 100%); max-height: calc(100vh - 2rem); overflow: auto; padding: 1.6rem; color: var(--ink); background: var(--paper); border: 1px solid rgba(255, 255, 255, .55); border-radius: 22px; box-shadow: 0 30px 90px rgba(0, 0, 0, .3); }
+.employee-modal-card { width: min(780px, 100%); }
 .modal-card h5 { color: var(--ink); }
+.employee-form-grid { row-gap: 1rem !important; }
+.form-section-title { display: flex; align-items: center; gap: .55rem; margin-top: .35rem; padding: .62rem .75rem; color: var(--teal-dark); background: #edf6f0; border: 1px solid #d5e7da; border-radius: 10px; font-size: .73rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.form-section-title i { width: 18px; text-align: center; color: var(--teal); }
+.employee-note { padding: .55rem .7rem; background: #fff9e9; border: 1px solid #f0dfb4; border-radius: 9px; }
 .modal-card label { display: block; margin-bottom: .38rem; color: var(--ink-soft); font-size: .74rem; font-weight: 750; }
 .modal-close {
   width: 34px;

@@ -366,32 +366,33 @@
         </form>
     </div>
     <div class="modal-shell" x-cloak x-show="employeeModal" x-transition.opacity>
-        <form class="modal-card" @submit.prevent="saveEmployee">
+        <form class="modal-card employee-modal-card" @submit.prevent="saveEmployee">
             <div class="panel-head">
                 <h5 x-text="editingEmployee ? 'Edit karyawan' : 'Tambah karyawan'"></h5><button type="button" class="modal-close" aria-label="Tutup" @click="employeeModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="row g-3">
-                <div class="col-sm-4"><label>NIK <small class="field-hint">Nomor identitas resmi, satu per karyawan</small></label><input class="form-control"
+            <div class="row g-3 employee-form-grid">
+                <div class="col-12"><div class="form-section-title"><i class="fa-solid fa-id-card"></i><span>Identitas karyawan</span></div></div>
+                <div class="col-sm-5"><label>NIK <small class="field-hint">Nomor identitas resmi, satu per karyawan</small></label><input class="form-control"
                         x-model="employeeForm.nik" placeholder="Contoh: 3201234567890001" required></div>
-                <div class="col-sm-8"><label>Nama lengkap</label><input class="form-control" x-model="employeeForm.name"
+                <div class="col-sm-7"><label>Nama lengkap</label><input class="form-control" x-model="employeeForm.name"
                         required></div>
                 <div class="col-sm-6"><label>Departemen</label><input class="form-control"
                         x-model="employeeForm.department"></div>
                 <div class="col-sm-6"><label>Jabatan</label><input class="form-control" x-model="employeeForm.position">
                 </div>
-                <div class="col-sm-6"><label>Jam kerja default <small class="field-hint">Absensi tetap dideteksi otomatis</small></label><select class="form-select" x-model="employeeForm.shift_id">
+                <div class="col-12"><div class="form-section-title"><i class="fa-solid fa-clock"></i><span>Penempatan & jam kerja</span></div></div>
+                <div class="col-12"><label>Jam kerja default <small class="field-hint">Absensi tetap dideteksi otomatis dari waktu scan mesin</small></label><select class="form-select" x-model="employeeForm.shift_id">
                         <option value="">Otomatis dari waktu scan</option><template x-for="shift in shifts" :key="shift.id">
                             <option :value="shift.id" x-text="shift.name"></option>
                         </template>
                     </select></div>
-                <div class="col-sm-6"><label>Nomor mesin utama <small class="field-hint">PIN / User ID</small></label><input class="form-control"
-                        x-model="employeeForm.device_user_id"></div>
+                <div class="col-12"><div class="form-section-title"><i class="fa-solid fa-money-check-dollar"></i><span>Data payroll & pajak</span></div></div>
                 <div class="col-sm-6"><label>Gaji pokok bulanan</label><input type="number" min="0" class="form-control" x-model.number="employeeForm.base_salary"></div>
-                <div class="col-sm-3"><label>Status pajak</label><select class="form-select" x-model="employeeForm.tax_status"><option>TK/0</option><option>TK/1</option><option>TK/2</option><option>TK/3</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select><small class="tax-status-note"><strong>TK</strong> = tidak kawin, <strong>K</strong> = kawin. Angka 0-3 adalah jumlah tanggungan pajak.</small></div>
+                <div class="col-sm-3"><label>Status pajak</label><select class="form-select" x-model="employeeForm.tax_status"><option>TK/0</option><option>TK/1</option><option>TK/2</option><option>TK/3</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
                 <div class="col-sm-3"><label>Tarif PPh 21/TER (%)</label><input type="number" min="0" step="0.01" class="form-control" x-model.number="employeeForm.pph21_rate"></div>
+                <div class="col-12"><small class="tax-status-note employee-note"><strong>Catatan:</strong> TK = tidak kawin, K = kawin, angka 0-3 = jumlah tanggungan pajak.</small></div>
                 <div class="col-sm-6"><label>Nomor BPJS Kesehatan</label><input class="form-control" x-model="employeeForm.bpjs_health_number"></div>
                 <div class="col-sm-6"><label>Nomor BPJS Ketenagakerjaan</label><input class="form-control" x-model="employeeForm.bpjs_employment_number"></div>
-                <div class="col-12" x-show="devices.length"><label>Nomor mesin per perangkat <small class="field-hint">PIN/User ID tiap mesin boleh berbeda, tetapi diarahkan ke NIK yang sama</small></label><div class="row g-2"><template x-for="device in devices" :key="device.id"><div class="col-sm-6"><div class="machine-map-field"><span x-text="device.name"></span><input class="form-control" placeholder="Contoh: 237" x-model="employeeForm.machine_mappings[device.id]"></div></div></template></div></div>
             </div><button class="btn btn-primary w-100 mt-4">Simpan karyawan</button>
         </form>
     </div>
