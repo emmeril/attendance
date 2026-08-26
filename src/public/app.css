@@ -267,6 +267,8 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
 .inline-filter .form-control,
 .inline-filter .form-select,
 .attendance-toolbar .toolbar-select { width: 100% !important; height: 41px; min-height: 41px; box-sizing: border-box; font-size: .78rem; }
+.attendance-toolbar input[type='date'] { color-scheme: light; }
+.attendance-toolbar input[type='date']::-webkit-calendar-picker-indicator { width: 16px; height: 16px; margin-right: .15rem; cursor: pointer; opacity: .85; }
 .attendance-toolbar .search-field,
 .attendance-toolbar .search-field input { min-width: 0; width: 100%; height: 41px; min-height: 41px; box-sizing: border-box; }
 .attendance-toolbar .search-field,
