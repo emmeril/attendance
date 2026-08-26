@@ -86,7 +86,7 @@
                                             </div>
                                         </template></div>
                                     <div class="row g-3">
-                                        <div class="col-lg-8">
+                                        <div class="col-lg-12">
                                             <div class="panel-card">
                                                 <div class="panel-head">
                                                     <div>
@@ -133,18 +133,6 @@
                                                     </table>
                                                 </div>
                                                 <div class="data-footer"><span x-text="rangeText('recent',recent)"></span><div class="pager"><button @click="changePage('recent',recent,-1)" :disabled="pages.recent<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.recent"></strong> / <span x-text="pageCount('recent',recent)"></span></span><button @click="changePage('recent',recent,1)" :disabled="pages.recent>=pageCount('recent',recent)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="panel-card accent-card">
-                                                <p class="eyebrow">STATUS SISTEM</p>
-                                                <h4>Semua terpantau.</h4>
-                                                <p class="muted">Sinkronisasi perangkat dan webhook berjalan melalui
-                                                    adapter Solution Cloud yang dapat dikonfigurasi.</p>
-                                                <div class="status-line"><span class="status-orb"></span><span>Database
-                                                        lokal aktif</span></div>
-                                                <div class="status-line"><span class="status-orb amber"></span><span
-                                                        x-text="stats.devices + ' perangkat terdaftar'"></span></div>
                                             </div>
                                         </div>
                                     </div>
