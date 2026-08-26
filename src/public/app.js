@@ -1,8 +1,9 @@
 function attendanceApp() {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+  const dateOffset = (days) => { const date = new Date(`${today}T00:00:00+07:00`); date.setDate(date.getDate() - days); return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(date); };
   return {
-    section: 'overview', date: today, from: today, to: today,
-    stats: {}, recent: [], attendance: [], employees: [], devices: [], shifts: [], toast: '', employeeModal: false, deviceModal: false, shiftModal: false, attendanceModal: false, editingEmployee: null, editingShift: null, editingDevice: null, editingAttendance: null,
+    section: 'overview', date: today, from: dateOffset(29), to: today, attendanceRange: '30',
+    stats: {}, recent: [], attendance: [], employees: [], devices: [], shifts: [], toast: '', attendanceLoading: false, employeeModal: false, deviceModal: false, shiftModal: false, attendanceModal: false, editingEmployee: null, editingShift: null, editingDevice: null, editingAttendance: null,
     queries: { recent:'', attendance:'', employees:'', shifts:'', devices:'' },
     filters: { recent:'', attendance:'', employees:'', shifts:'', devices:'' },
     pages: { recent:1, attendance:1, employees:1, shifts:1, devices:1 },
@@ -36,12 +37,23 @@ function attendanceApp() {
     pagedData(type, items) { const filtered=this.filteredData(type,items); const page=Math.min(this.pages[type],Math.max(1,Math.ceil(filtered.length/this.perPage[type]))); const start=(page-1)*this.perPage[type]; return filtered.slice(start,start+this.perPage[type]); },
     pageCount(type, items) { return Math.max(1,Math.ceil(this.filteredData(type,items).length/this.perPage[type])); },
     resetPage(type) { this.pages[type]=1; },
+    setAttendanceRange(range) { this.attendanceRange=String(range); if(range==='custom') return; if(range==='all') { this.from='2000-01-01'; this.to=today; } else { this.from=dateOffset(Number(range)-1); this.to=today; } this.pages.attendance=1; this.loadAttendance(); },
+    applyAttendanceDates() { this.attendanceRange='custom'; this.pages.attendance=1; this.loadAttendance(); },
     changePage(type, items, direction) { this.pages[type]=Math.min(this.pageCount(type,items),Math.max(1,this.pages[type]+direction)); },
     rangeText(type, items) { const total=this.filteredData(type,items).length; if(!total) return 'Tidak ada data'; const start=(this.pages[type]-1)*this.perPage[type]+1; const end=Math.min(start+this.perPage[type]-1,total); return `${start}-${end} dari ${total} data`; },
     async request(url, options = {}) { const response = await fetch(url, { headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Permintaan gagal'); return data; },
     async init() { await Promise.all([this.loadDashboard(), this.loadAttendance(), this.loadEmployees(), this.loadDevices(), this.loadShifts()]); },
     async loadDashboard() { try { const data = await this.request(`/api/dashboard?date=${this.date}`); this.stats=data.stats; this.recent=data.recent; } catch(e) { this.notify(e.message); } },
-    async loadAttendance() { try { this.attendance=await this.request(`/api/attendance?from=${this.from}&to=${this.to}`); } catch(e) { this.notify(e.message); } },
+    async loadAttendance() {
+      if(!this.from || !this.to) return;
+      if(this.from > this.to) { this.attendance=[]; this.notify('Tanggal mulai tidak boleh setelah tanggal akhir.'); return; }
+      this.attendanceLoading=true;
+      try {
+        this.attendance=await this.request(`/api/attendance?from=${encodeURIComponent(this.from)}&to=${encodeURIComponent(this.to)}`);
+        this.pages.attendance=1;
+      } catch(e) { this.notify(e.message); }
+      finally { this.attendanceLoading=false; }
+    },
     async loadEmployees() { try { this.employees=await this.request('/api/employees'); } catch(e) { this.notify(e.message); } },
     async loadDevices() { try { this.devices=await this.request('/api/devices'); } catch(e) { this.notify(e.message); } },
     async loadShifts() { try { this.shifts=await this.request('/api/shifts'); } catch(e) { this.notify(e.message); } },

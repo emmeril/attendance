@@ -156,15 +156,16 @@
                                     <p class="eyebrow mb-1">REKAP KEHADIRAN DARI MESIN</p>
                                         <h5>Data absensi harian</h5>
                                     </div>
-                                    <div class="d-flex gap-2"><input type="date" class="form-control"
-                                            x-model="from"><input type="date" class="form-control" x-model="to"><button
-                                            class="btn btn-primary" @click="loadAttendance">Tampilkan</button></div>
                                 </div>
-                                <div class="data-toolbar">
+                                <div class="data-toolbar attendance-toolbar">
+                                    <label class="inline-filter date-filter"><span>Dari</span><input type="date" class="form-control" x-model="from" @change="applyAttendanceDates()"></label>
+                                    <label class="inline-filter date-filter"><span>Sampai</span><input type="date" class="form-control" x-model="to" @change="applyAttendanceDates()"></label>
+                                    <label class="inline-filter period-filter"><span>Periode</span><select class="form-select" x-model="attendanceRange" @change="setAttendanceRange(attendanceRange)"><option value="custom">Pilih tanggal</option><option value="7">7 hari</option><option value="30">30 hari</option><option value="90">90 hari</option><option value="all">Semua data</option></select></label>
                                     <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, kode, tanggal..." x-model="queries.attendance" @input="resetPage('attendance')"></label>
                                     <select class="form-select toolbar-select" x-model="filters.attendance" @change="resetPage('attendance')"><option value="">Semua status</option><option value="hadir">Hadir</option><option value="terlambat">Terlambat</option></select>
                                     <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.attendance" @change="resetPage('attendance')"><option :value="10">10</option><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label>
                                 </div>
+                                <div class="attendance-result-line"><span><i class="fa-solid" :class="attendanceLoading ? 'fa-spinner fa-spin' : 'fa-calendar-check'"></i> <span x-show="attendanceLoading">Mengambil data mesin...</span><span x-show="!attendanceLoading" x-text="filteredData('attendance',attendance).length + ' data pada ' + from + ' s/d ' + to"></span></span><span x-show="!attendanceLoading && !attendance.length" class="text-warning"><i class="fa-solid fa-circle-info"></i> Belum ada hasil sinkronisasi pada periode ini.</span></div>
                                 <div class="table-responsive">
                                     <table class="table align-middle">
                                         <thead>
@@ -194,7 +195,7 @@
                                                     <td x-text="row.late_minutes + ' mnt'"></td>
                                                     <td class="table-actions"><button class="icon-action" title="Edit" @click="editAttendance(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteAttendance(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
-                                            </template><tr x-show="!filteredData('attendance',attendance).length"><td colspan="8" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Data absensi tidak ditemukan.</span></td></tr></tbody>
+                                            </template><tr x-show="!attendanceLoading && !filteredData('attendance',attendance).length"><td colspan="8" class="empty-state"><i class="fa-regular fa-folder-open"></i><span x-text="attendance.length ? 'Data tidak cocok dengan pencarian atau status yang dipilih.' : 'Belum ada data absensi pada rentang tanggal ini.'"></span></td></tr><tr x-show="attendanceLoading"><td colspan="8" class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><span>Memuat data absensi...</span></td></tr></tbody>
                                     </table>
                                 </div>
                                 <div class="data-footer"><span x-text="rangeText('attendance',attendance)"></span><div class="pager"><button @click="changePage('attendance',attendance,-1)" :disabled="pages.attendance<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.attendance"></strong> / <span x-text="pageCount('attendance',attendance)"></span></span><button @click="changePage('attendance',attendance,1)" :disabled="pages.attendance>=pageCount('attendance',attendance)"><i class="fa-solid fa-chevron-right"></i></button></div></div>

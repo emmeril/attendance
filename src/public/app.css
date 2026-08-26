@@ -258,6 +258,12 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
 }
 .search-field input:focus { border-color: #3a8d81; box-shadow: 0 0 0 4px rgba(32, 119, 108, .1); }
 .toolbar-select { min-width: 170px; }
+.attendance-toolbar { grid-template-columns: 145px 145px 155px minmax(210px, 1fr) 160px auto; }
+.inline-filter { display: grid; gap: .28rem; margin: 0; color: var(--muted); font-size: .66rem; font-weight: 750; letter-spacing: .03em; }
+.inline-filter .form-control,
+.inline-filter .form-select { min-height: 41px; font-size: .78rem; }
+.attendance-result-line { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: -.2rem 0 .7rem; color: var(--muted); font-size: .72rem; font-weight: 650; }
+.attendance-result-line i { margin-right: .25rem; color: var(--teal); }
 .show-control { display: flex; align-items: center; gap: .55rem; margin: 0; color: var(--muted); font-size: .73rem; font-weight: 700; white-space: nowrap; }
 .show-control .form-select { width: 78px; min-height: 41px; }
 .data-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .9rem; color: var(--muted); font-size: .73rem; font-weight: 600; }
@@ -379,6 +385,9 @@ label { color: var(--ink-soft); }
   .panel-head > .d-flex .form-control { min-width: 140px; flex: 1; }
   .panel-head > .btn { width: 100%; }
   .data-toolbar { grid-template-columns: 1fr; }
+  .attendance-toolbar { grid-template-columns: 1fr 1fr; }
+  .attendance-toolbar .search-field { grid-column: 1 / -1; }
+  .attendance-result-line { align-items: flex-start; flex-direction: column; gap: .35rem; }
   .toolbar-select { width: 100%; }
   .show-control { justify-content: space-between; }
   .data-footer { align-items: stretch; flex-direction: column; }
