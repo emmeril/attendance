@@ -218,6 +218,16 @@ for (const definition of [
     if (!/duplicate column name/i.test(error.message)) throw error;
   }
 }
+for (const definition of [
+  'attendance_days INTEGER NOT NULL DEFAULT 0',
+  'scheduled_days INTEGER NOT NULL DEFAULT 0',
+  'absence_days INTEGER NOT NULL DEFAULT 0',
+  'late_minutes_total INTEGER NOT NULL DEFAULT 0'
+]) {
+  try { db.exec(`ALTER TABLE payroll_records ADD COLUMN ${definition}`); } catch (error) {
+    if (!/duplicate column name/i.test(error.message)) throw error;
+  }
+}
 for (const column of ['check_in_start', 'check_in_end', 'check_out_start', 'check_out_end']) {
   try { db.exec(`ALTER TABLE shifts ADD COLUMN ${column} TEXT`); } catch (error) {
     if (!/duplicate column name/i.test(error.message)) throw error;

@@ -109,4 +109,7 @@ test('leave and payroll draft endpoints are available', async () => {
   const calculated = await agent.post(`/api/payroll/periods/${period.body.id}/calculate`).send({});
   assert.equal(calculated.status, 200);
   assert.ok(calculated.body.employees >= 1);
+  const records = await agent.get(`/api/payroll/periods/${period.body.id}/records`);
+  assert.equal(records.status, 200);
+  assert.ok(records.body.every(row => Number.isInteger(row.scheduled_days) && Number.isInteger(row.attendance_days) && Number.isInteger(row.absence_days)));
 });
