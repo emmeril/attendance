@@ -112,5 +112,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_daily_date ON daily_attendance(attendance_date);
 `);
 
-module.exports = db;
+// Keep older databases compatible with direct machine connections.
+try { db.exec('ALTER TABLE devices ADD COLUMN machine_port INTEGER NOT NULL DEFAULT 4370'); } catch (error) {
+  if (!/duplicate column name/i.test(error.message)) throw error;
+}
 
+module.exports = db;

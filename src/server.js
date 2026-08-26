@@ -11,6 +11,7 @@ const config = require('./config');
 const seed = require('./seed');
 const { ingestMany } = require('./services/attendance-service');
 const adms = require('./services/adms');
+const directMachine = require('./services/direct-machine');
 const { encrypt } = require('./services/secrets');
 const ejs = require('ejs');
 
@@ -115,16 +116,34 @@ app.put('/api/employees/:id', isAuthenticated, (req, res) => {
 app.get('/api/shifts', isAuthenticated, (req, res) => res.json(db.prepare('SELECT * FROM shifts ORDER BY name').all()));
 app.post('/api/shifts', isAuthenticated, (req, res) => { const x=req.body; try { const r=db.prepare('INSERT INTO shifts (name,start_time,end_time,late_tolerance_minutes,work_days) VALUES (?,?,?,?,?)').run(x.name,x.start_time,x.end_time,Number(x.late_tolerance_minutes||0),x.work_days||'1,2,3,4,5'); res.status(201).json({id:r.lastInsertRowid}); } catch(e) { res.status(400).json({error:e.message}); } });
 
-app.get('/api/devices', isAuthenticated, (req, res) => res.json(db.prepare('SELECT id,serial_number,name,location,model,provider,external_id,api_url,status,last_seen_at,last_sync_at,is_active,created_at FROM devices ORDER BY name').all()));
-app.post('/api/devices', isAuthenticated, (req, res) => { const x=req.body; try { const r=db.prepare('INSERT INTO devices (serial_number,name,location,model,provider,external_id,api_url,api_token) VALUES (?,?,?,?,?,?,?,?)').run(x.serial_number,x.name,x.location||null,x.model||null,x.provider||'solution',x.external_id||null,x.api_url||null,encrypt(x.api_token)); res.status(201).json({id:r.lastInsertRowid}); } catch(e) { res.status(400).json({error:e.message}); } });
-app.post('/api/devices/:id/test', isAuthenticated, (req, res) => {
-  const d = db.prepare('SELECT id,name,status,last_seen_at FROM devices WHERE id=?').get(req.params.id);
+app.get('/api/devices', isAuthenticated, (req, res) => res.json(db.prepare('SELECT id,serial_number,name,location,model,provider,external_id,api_url,machine_port,status,last_seen_at,last_sync_at,is_active,created_at FROM devices ORDER BY name').all()));
+app.post('/api/devices', isAuthenticated, (req, res) => { const x=req.body; try { const r=db.prepare('INSERT INTO devices (serial_number,name,location,model,provider,external_id,api_url,machine_port,api_token) VALUES (?,?,?,?,?,?,?,?,?)').run(x.serial_number,x.name,x.location||null,x.model||null,x.provider||'solution',x.external_id||null,x.api_url||null,Number(x.machine_port||4370),encrypt(x.api_token)); res.status(201).json({id:r.lastInsertRowid}); } catch(e) { res.status(400).json({error:e.message}); } });
+app.post('/api/devices/:id/test', isAuthenticated, async (req, res) => {
+  const d = db.prepare('SELECT * FROM devices WHERE id=?').get(req.params.id);
   if (!d) return res.status(404).json({ error: 'Perangkat tidak ditemukan' });
+  if (d.api_url) {
+    try {
+      const result = await directMachine.testConnection(d);
+      db.prepare("UPDATE devices SET status='online', last_seen_at=CURRENT_TIMESTAMP WHERE id=?").run(d.id);
+      return res.json(result);
+    } catch (error) {
+      db.prepare("UPDATE devices SET status='offline' WHERE id=?").run(d.id);
+      return res.status(502).json({ error: `Koneksi ${directMachine.hostFromDevice(d)}:${d.machine_port || 4370} gagal: ${error.message}` });
+    }
+  }
   const lastSeen = d.last_seen_at ? Date.parse(`${d.last_seen_at}Z`) : NaN;
   const connected = Number.isFinite(lastSeen) && (Date.now() - lastSeen) < 5 * 60 * 1000;
   return res.json({ ok: connected, connected, status: connected ? 'online' : 'offline', last_seen_at: d.last_seen_at, message: connected ? 'Mesin terakhir terhubung.' : 'Belum ada koneksi ADMS dari mesin.' });
 });
-app.post('/api/devices/:id/sync', isAuthenticated, (req, res) => res.status(400).json({ error: 'Mode ADMS mengirim data otomatis. Tekan Tes koneksi setelah mengatur server ADMS pada mesin.' }));
+app.post('/api/devices/:id/sync', isAuthenticated, async (req, res) => {
+  const d = db.prepare('SELECT * FROM devices WHERE id=?').get(req.params.id);
+  if (!d) return res.status(404).json({ error: 'Perangkat tidak ditemukan' });
+  if (d.api_url) {
+    try { return res.json(await directMachine.pullAttendance(d)); }
+    catch (error) { return res.status(502).json({ error: `Sinkronisasi gagal: ${error.message}` }); }
+  }
+  return res.status(400).json({ error: 'Isi IP mesin terlebih dahulu, atau gunakan mode ADMS.' });
+});
 
 app.get('/api/attendance', isAuthenticated, (req, res) => { const from=String(req.query.from||new Date().toISOString().slice(0,10)); const to=String(req.query.to||from); const rows=db.prepare(`SELECT da.*,e.employee_code,e.name,e.department,s.name shift_name FROM daily_attendance da JOIN employees e ON e.id=da.employee_id LEFT JOIN shifts s ON s.id=e.shift_id WHERE da.attendance_date BETWEEN ? AND ? ORDER BY da.attendance_date DESC,e.name`).all(from,to); res.json(rows); });
 app.get('/api/attendance/logs', isAuthenticated, (req, res) => res.json(db.prepare(`SELECT a.*,e.name employee_name,d.name device_name FROM attendance_logs a LEFT JOIN employees e ON e.id=a.employee_id LEFT JOIN devices d ON d.id=a.device_id ORDER BY a.scanned_at DESC LIMIT 200`).all()));

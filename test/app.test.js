@@ -28,7 +28,7 @@ test('authenticated dashboard renders the ADMS connection instructions', async (
   assert.equal(login.status, 302);
   const dashboard = await agent.get('/');
   assert.equal(dashboard.status, 200);
-  assert.match(dashboard.text, /Pengaturan ADMS mesin/);
+  assert.match(dashboard.text, /Koneksi mesin/);
 });
 
 test('solution webhook rejects an invalid secret when configured', async () => {
@@ -67,4 +67,10 @@ test('ADMS handshake and attendance push are accepted', async () => {
   assert.equal(device.status, 'online');
   const log = require('../src/db').prepare('SELECT scanned_at FROM attendance_logs WHERE device_serial = ?').get('ADMS-TEST-001');
   assert.equal(log.scanned_at, '2026-08-24T09:00:00+07:00');
+});
+
+test('direct machine host is normalized', () => {
+  const { hostFromDevice } = require('../src/services/direct-machine');
+  assert.equal(hostFromDevice({ api_url: '192.168.2.201' }), '192.168.2.201');
+  assert.equal(hostFromDevice({ api_url: 'http://192.168.2.201' }), '192.168.2.201');
 });

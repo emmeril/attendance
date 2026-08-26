@@ -4,7 +4,7 @@ function attendanceApp() {
     section: 'overview', date: today, from: today, to: today,
     stats: {}, recent: [], attendance: [], employees: [], devices: [], shifts: [], toast: '', employeeModal: false, deviceModal: false, shiftModal: false, editingEmployee: null,
     employeeForm: { employee_code:'', name:'', department:'', position:'', shift_id:'', device_user_id:'' },
-    deviceForm: { serial_number:'', name:'', location:'', model:'', external_id:'', api_url:'', api_token:'' },
+    deviceForm: { serial_number:'', name:'', location:'', model:'', external_id:'', api_url:'', machine_port:4370, api_token:'' },
     shiftForm: { name:'', start_time:'08:00', end_time:'17:00', late_tolerance_minutes:10, work_days:'1,2,3,4,5' },
     statCards: [
       { key: 'employees', label: 'Karyawan aktif', icon: 'bi bi-people', color: 'blue' },
@@ -22,7 +22,7 @@ function attendanceApp() {
     async loadShifts() { try { this.shifts=await this.request('/api/shifts'); } catch(e) { this.notify(e.message); } },
     async saveEmployee() { try { await this.request('/api/employees',{method:'POST',body:JSON.stringify(this.employeeForm)}); this.employeeModal=false; this.employeeForm={employee_code:'',name:'',department:'',position:'',shift_id:'',device_user_id:''}; await Promise.all([this.loadEmployees(),this.loadDashboard()]); this.notify('Karyawan berhasil disimpan.'); } catch(e) { this.notify(e.message); } },
     async saveShift() { try { await this.request('/api/shifts',{method:'POST',body:JSON.stringify(this.shiftForm)}); this.shiftModal=false; this.shiftForm={name:'',start_time:'08:00',end_time:'17:00',late_tolerance_minutes:10,work_days:'1,2,3,4,5'}; await this.loadShifts(); this.notify('Shift berhasil disimpan.'); } catch(e) { this.notify(e.message); } },
-    async saveDevice() { try { await this.request('/api/devices',{method:'POST',body:JSON.stringify(this.deviceForm)}); this.deviceModal=false; this.deviceForm={serial_number:'',name:'',location:'',model:'',external_id:'',api_url:'',api_token:''}; await Promise.all([this.loadDevices(),this.loadDashboard()]); this.notify('Perangkat berhasil didaftarkan.'); } catch(e) { this.notify(e.message); } },
+    async saveDevice() { try { await this.request('/api/devices',{method:'POST',body:JSON.stringify(this.deviceForm)}); this.deviceModal=false; this.deviceForm={serial_number:'',name:'',location:'',model:'',external_id:'',api_url:'',machine_port:4370,api_token:''}; await Promise.all([this.loadDevices(),this.loadDashboard()]); this.notify('Perangkat berhasil didaftarkan.'); } catch(e) { this.notify(e.message); } },
     async testDevice(device) { try { const result=await this.request(`/api/devices/${device.id}/test`, { method:'POST', body:'{}' }); this.notify(result.message || `${device.name} terhubung.`); await this.loadDevices(); } catch(e) { this.notify(`Koneksi gagal: ${e.message}`); } },
     async syncDevice(device) { try { const result=await this.request(`/api/devices/${device.id}/sync`, { method:'POST', body:JSON.stringify({from:this.from,to:this.to}) }); this.notify(`${result.inserted} data baru disinkronkan.`); await Promise.all([this.loadDashboard(),this.loadAttendance()]); } catch(e) { this.notify(`Sinkronisasi gagal: ${e.message}`); } },
     formatDate(value) { if (!value) return '—'; return new Date(value).toLocaleString('id-ID', { dateStyle:'short', timeStyle:'short' }); },

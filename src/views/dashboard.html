@@ -261,9 +261,11 @@
                                     </div><button class="btn btn-primary" @click="deviceModal=true"><i
                                             class="bi bi-plus-lg"></i> Daftar perangkat</button>
                                 </div>
-                                <div class="alert alert-info small"><strong>Pengaturan ADMS mesin:</strong> isi server
-                                    <code><%= admsHost %></code> dan port <code><%= admsPort %></code>. Mesin akan
-                                    memanggil endpoint <code>/iclock</code> dan mengirim absensi otomatis.</div>
+                                <div class="alert alert-info small"><strong>Koneksi mesin:</strong> IP mesin sudah
+                                    diisi saat pendaftaran. Tombol <em>Tes koneksi</em> memakai protokol langsung
+                                    port <code>4370</code>; tombol <em>Ambil data</em> membaca log absensi dari mesin.
+                                    Mesin yang dikonfigurasi ADMS tetap dapat mengirim otomatis ke endpoint
+                                    <code>/iclock</code>.</div>
                                 <div class="row g-3"><template x-for="row in devices" :key="row.id">
                                         <div class="col-md-6 col-xl-4">
                                             <div class="device-card">
@@ -277,8 +279,11 @@
                                                 <p class="muted mb-1" x-text="row.serial_number"></p>
                                                 <p class="small text-muted"
                                                     x-text="row.location || 'Lokasi belum diatur'"></p>
+                                                <p class="small text-muted" x-text="row.api_url ? row.api_url + ':' + (row.machine_port || 4370) : 'ADMS push mode'"></p>
                                                 <div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary"
-                                                        @click="testDevice(row)">Tes koneksi</button></div>
+                                                        @click="testDevice(row)">Tes koneksi</button><button
+                                                        class="btn btn-sm btn-outline-secondary" @click="syncDevice(row)"
+                                                        x-show="row.api_url">Ambil data</button></div>
                                             </div>
                                         </div>
                                     </template></div>
@@ -340,14 +345,12 @@
                         x-model="deviceForm.serial_number" required></div>
                 <div class="col-sm-6"><label>Lokasi</label><input class="form-control" x-model="deviceForm.location">
                 </div>
+                <div class="col-sm-6"><label>IP address / host mesin</label><input class="form-control" x-model="deviceForm.api_url" placeholder="192.168.2.201"></div>
+                <div class="col-sm-6"><label>Port mesin</label><input type="number" class="form-control" x-model="deviceForm.machine_port" value="4370"></div>
                 <div class="col-sm-6"><label>Model</label><input class="form-control" x-model="deviceForm.model"
                         placeholder="Solution X100-C"></div>
                 <div class="col-12"><label>Device ID di Solution Cloud</label><input class="form-control"
                         x-model="deviceForm.external_id"></div>
-                <div class="col-12"><label>Base URL API khusus (opsional)</label><input type="url" class="form-control"
-                        x-model="deviceForm.api_url" placeholder="https://www.solutioncloud.co.id"></div>
-                <div class="col-12"><label>API token khusus (opsional)</label><input type="password"
-                        class="form-control" x-model="deviceForm.api_token"></div>
             </div><button class="btn btn-primary w-100 mt-4">Simpan perangkat</button>
         </form>
     </div>
