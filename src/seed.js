@@ -16,7 +16,7 @@ function seed() {
     if (!shift) {
       const result = db.prepare(`
         INSERT INTO shifts (name, start_time, end_time, late_tolerance_minutes, work_days)
-        VALUES ('Reguler', '07:00', '17:00', 10, '1,2,3,4,5')
+        VALUES ('Reguler', '07:00', '16:00', 10, '1,2,3,4,5')
       `).run();
       shift = { id: result.lastInsertRowid };
     }
