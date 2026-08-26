@@ -23,6 +23,10 @@ db.exec(`
     name TEXT NOT NULL,
     start_time TEXT NOT NULL,
     end_time TEXT NOT NULL,
+    check_in_start TEXT,
+    check_in_end TEXT,
+    check_out_start TEXT,
+    check_out_end TEXT,
     late_tolerance_minutes INTEGER NOT NULL DEFAULT 10,
     work_days TEXT NOT NULL DEFAULT '1,2,3,4,5',
     is_active INTEGER NOT NULL DEFAULT 1,
@@ -130,6 +134,12 @@ try { db.exec('ALTER TABLE devices ADD COLUMN machine_port INTEGER NOT NULL DEFA
 try { db.exec('ALTER TABLE employees ADD COLUMN nik TEXT'); } catch (error) {
   if (!/duplicate column name/i.test(error.message)) throw error;
 }
+for (const column of ['check_in_start', 'check_in_end', 'check_out_start', 'check_out_end']) {
+  try { db.exec(`ALTER TABLE shifts ADD COLUMN ${column} TEXT`); } catch (error) {
+    if (!/duplicate column name/i.test(error.message)) throw error;
+  }
+}
+db.exec(`UPDATE shifts SET check_in_start = COALESCE(check_in_start, start_time), check_in_end = COALESCE(check_in_end, start_time), check_out_start = COALESCE(check_out_start, end_time), check_out_end = COALESCE(check_out_end, end_time)`);
 try { db.exec('ALTER TABLE daily_attendance ADD COLUMN shift_id INTEGER REFERENCES shifts(id) ON DELETE SET NULL'); } catch (error) {
   if (!/duplicate column name/i.test(error.message)) throw error;
 }

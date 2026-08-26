@@ -251,7 +251,7 @@
                                     <div>
                                 <p class="eyebrow mb-1">WORK PATTERN</p>
                                         <h5>Pengaturan jam kerja</h5>
-                                    </div><button class="btn btn-primary" @click="editingShift=null; shiftForm={name:'',start_time:'08:00',end_time:'17:00',late_tolerance_minutes:10,work_days:'1,2,3,4,5'}; shiftDays=['1','2','3','4','5']; shiftModal=true"><i
+                                    </div><button class="btn btn-primary" @click="editingShift=null; shiftForm={name:'',start_time:'08:00',end_time:'17:00',check_in_start:'07:00',check_in_end:'09:00',check_out_start:'15:00',check_out_end:'18:00',late_tolerance_minutes:10,work_days:'1,2,3,4,5'}; shiftDays=['1','2','3','4','5']; shiftModal=true"><i
                                             class="fa-solid fa-plus"></i> Tambah jam kerja</button>
                                 </div>
                                 <div class="data-toolbar">
@@ -266,6 +266,8 @@
                                                 <th>Nama jam kerja</th>
                                                 <th>Jam masuk</th>
                                                 <th>Jam pulang</th>
+                                                <th>Range masuk</th>
+                                                <th>Range pulang</th>
                                                 <th>Toleransi</th>
                                                 <th>Hari kerja</th>
                                                 <th>Aksi</th>
@@ -276,11 +278,13 @@
                                                     <td><strong x-text="row.name"></strong></td>
                                                     <td x-text="row.start_time"></td>
                                                     <td x-text="row.end_time"></td>
+                                                    <td x-text="(row.check_in_start || row.start_time) + ' - ' + (row.check_in_end || row.start_time)"></td>
+                                                    <td x-text="(row.check_out_start || row.end_time) + ' - ' + (row.check_out_end || row.end_time)"></td>
                                                     <td x-text="row.late_tolerance_minutes + ' menit'"></td>
                                                     <td x-text="workDays(row.work_days)"></td>
                                                     <td class="table-actions"><button class="icon-action" title="Edit" @click="editShift(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteShift(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
-                                            </template><tr x-show="!filteredData('shifts',shifts).length"><td colspan="6" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Jam kerja tidak ditemukan.</span></td></tr></tbody>
+                                            </template><tr x-show="!filteredData('shifts',shifts).length"><td colspan="8" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Jam kerja tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
                                 <div class="data-footer"><span x-text="rangeText('shifts',shifts)"></span><div class="pager"><button @click="changePage('shifts',shifts,-1)" :disabled="pages.shifts<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.shifts"></strong> / <span x-text="pageCount('shifts',shifts)"></span></span><button @click="changePage('shifts',shifts,1)" :disabled="pages.shifts>=pageCount('shifts',shifts)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
@@ -387,6 +391,10 @@
                         x-model="shiftForm.start_time" required></div>
                 <div class="col-6"><label>Jam pulang <small class="field-hint">00:00 - 23:59</small></label><input type="time" min="00:00" max="23:59" step="60" class="form-control"
                         x-model="shiftForm.end_time" required></div>
+                <div class="col-6"><label>Batas awal jam masuk</label><input type="time" class="form-control" x-model="shiftForm.check_in_start" required></div>
+                <div class="col-6"><label>Batas akhir jam masuk</label><input type="time" class="form-control" x-model="shiftForm.check_in_end" required></div>
+                <div class="col-6"><label>Batas awal jam pulang</label><input type="time" class="form-control" x-model="shiftForm.check_out_start" required></div>
+                <div class="col-6"><label>Batas akhir jam pulang</label><input type="time" class="form-control" x-model="shiftForm.check_out_end" required></div>
                 <div class="col-12"><label>Toleransi terlambat (menit)</label><input type="number" min="0"
                         class="form-control" x-model="shiftForm.late_tolerance_minutes"></div>
                 <div class="col-12"><label>Hari kerja</label><div class="weekday-grid"><label class="weekday-option"><input type="checkbox" value="1" x-model="shiftDays"><span>Senin</span></label><label class="weekday-option"><input type="checkbox" value="2" x-model="shiftDays"><span>Selasa</span></label><label class="weekday-option"><input type="checkbox" value="3" x-model="shiftDays"><span>Rabu</span></label><label class="weekday-option"><input type="checkbox" value="4" x-model="shiftDays"><span>Kamis</span></label><label class="weekday-option"><input type="checkbox" value="5" x-model="shiftDays"><span>Jumat</span></label><label class="weekday-option"><input type="checkbox" value="6" x-model="shiftDays"><span>Sabtu</span></label><label class="weekday-option"><input type="checkbox" value="0" x-model="shiftDays"><span>Minggu</span></label></div></div>

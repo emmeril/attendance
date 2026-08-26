@@ -70,21 +70,34 @@ function rebuildDaily(employeeId, date) {
     .filter(shift => String(shift.work_days || '').split(',').includes(workDay));
   if (!shifts.length) shifts = db.prepare("SELECT * FROM shifts WHERE is_active = 1 ORDER BY start_time").all();
   const firstMinutes = first.hour() * 60 + first.minute();
+  const toMinutes = value => { const [hour, minute] = String(value || '00:00').split(':').map(Number); return hour * 60 + minute; };
+  const inRange = (value, start, end) => { const current = toMinutes(value); const from = toMinutes(start); const until = toMinutes(end); return from <= until ? current >= from && current <= until : current >= from || current <= until; };
   const minuteDistance = (time) => {
     const [hour, minute] = String(time).split(':').map(Number);
     const difference = Math.abs(firstMinutes - (hour * 60 + minute));
     return Math.min(difference, 1440 - difference);
   };
-  shifts.sort((a, b) => minuteDistance(a.start_time) - minuteDistance(b.start_time));
+  shifts.sort((a, b) => {
+    const aIn = inRange(first.format('HH:mm'), a.check_in_start || a.start_time, a.check_in_end || a.start_time);
+    const bIn = inRange(first.format('HH:mm'), b.check_in_start || b.start_time, b.check_in_end || b.start_time);
+    return Number(bIn) - Number(aIn) || minuteDistance(a.start_time) - minuteDistance(b.start_time);
+  });
   const shift = shifts[0] || null;
   const overnight = shift && shift.end_time <= shift.start_time;
-  let logs = dayLogs;
+  let availableLogs = dayLogs;
   if (overnight) {
     const nextDate = dayjs(`${date}T00:00:00`).add(1, 'day').format('YYYY-MM-DD');
     const nextLogs = db.prepare(`SELECT scanned_at FROM attendance_logs WHERE employee_id = ? AND substr(scanned_at,1,10) = ? ORDER BY scanned_at`).all(employeeId, nextDate);
     const scheduledEnd = dayjs(`${nextDate}T${shift.end_time}:00`).add(4, 'hour');
-    logs = [...dayLogs, ...nextLogs.filter(log => dayjs(log.scanned_at).isBefore(scheduledEnd) || dayjs(log.scanned_at).isSame(scheduledEnd))];
+    availableLogs = [...dayLogs, ...nextLogs.filter(log => dayjs(log.scanned_at).isBefore(scheduledEnd) || dayjs(log.scanned_at).isSame(scheduledEnd))];
   }
+
+  const checkOutCandidates = shift ? availableLogs.slice(1).filter(log => {
+    const scannedLog = dayjs(log.scanned_at);
+    if (overnight && scannedLog.format('YYYY-MM-DD') === date) return false;
+    return inRange(scannedLog.format('HH:mm'), shift.check_out_start || shift.end_time, shift.check_out_end || shift.end_time);
+  }) : availableLogs.slice(1);
+  const logs = checkOutCandidates.length ? [dayLogs[0], checkOutCandidates[checkOutCandidates.length - 1]] : [dayLogs[0]];
 
   const last = dayjs(logs[logs.length - 1].scanned_at);
   const tolerance = shift?.late_tolerance_minutes || 0;

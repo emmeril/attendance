@@ -15,13 +15,13 @@ function seed() {
     let shift = db.prepare("SELECT id FROM shifts WHERE lower(name) = 'reguler' LIMIT 1").get();
     if (!shift) {
       const result = db.prepare(`
-        INSERT INTO shifts (name, start_time, end_time, late_tolerance_minutes, work_days)
-        VALUES ('Reguler', '07:00', '16:00', 10, '1,2,3,4,5')
+        INSERT INTO shifts (name, start_time, end_time, check_in_start, check_in_end, check_out_start, check_out_end, late_tolerance_minutes, work_days)
+        VALUES ('Reguler', '07:00', '16:00', '06:00', '09:00', '15:00', '18:00', 10, '1,2,3,4,5')
       `).run();
       shift = { id: result.lastInsertRowid };
     }
     if (!db.prepare("SELECT id FROM shifts WHERE lower(name) = 'shift 3' LIMIT 1").get()) {
-      db.prepare(`INSERT INTO shifts (name,start_time,end_time,late_tolerance_minutes,work_days) VALUES ('Shift 3','21:00','07:00',10,'1,2,3,4,5,6,0')`).run();
+      db.prepare(`INSERT INTO shifts (name,start_time,end_time,check_in_start,check_in_end,check_out_start,check_out_end,late_tolerance_minutes,work_days) VALUES ('Shift 3','21:00','07:00','20:00','23:59','06:00','09:00',10,'1,2,3,4,5,6,0')`).run();
     }
 
     const insertEmployee = db.prepare(`
