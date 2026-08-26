@@ -4,10 +4,10 @@ function attendanceApp() {
   return {
     section: 'overview', date: today, from: dateOffset(29), to: today, attendanceRange: '30',
     stats: {}, recent: [], attendance: [], employees: [], devices: [], shifts: [], leaves: [], leaveTypes: [], payrollPeriods: [], payrollRecords: [], payrollSettings: {}, selectedPayrollPeriod:'', toast: '', attendanceLoading: false, employeeModal: false, deviceModal: false, shiftModal: false, attendanceModal: false, leaveModal: false, payrollPeriodModal: false, editingEmployee: null, editingShift: null, editingDevice: null, editingAttendance: null,
-    queries: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'' },
-    filters: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'' },
-    pages: { recent:1, attendance:1, employees:1, shifts:1, devices:1, leaves:1 },
-    perPage: { recent:5, attendance:10, employees:25, shifts:10, devices:6, leaves:10 },
+    queries: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'', payroll:'' },
+    filters: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'', payroll:'' },
+    pages: { recent:1, attendance:1, employees:1, shifts:1, devices:1, leaves:1, payroll:1 },
+    perPage: { recent:5, attendance:10, employees:25, shifts:10, devices:6, leaves:10, payroll:10 },
     employeeForm: { nik:'', name:'', department:'', position:'', shift_id:'', device_user_id:'', base_salary:0, tax_status:'TK/0', pph21_rate:0, bpjs_health_number:'', bpjs_employment_number:'', machine_mappings:{} },
     deviceForm: { serial_number:'', name:'', location:'', model:'', external_id:'', api_url:'', machine_port:4370, api_token:'' },
     shiftForm: { name:'', start_time:'08:00', end_time:'17:00', check_in_start:'07:00', check_in_end:'09:00', check_out_start:'15:00', check_out_end:'18:00', late_tolerance_minutes:10, work_days:'1,2,3,4,5' }, shiftDays: ['1','2','3','4','5'],
@@ -36,6 +36,9 @@ function attendanceApp() {
         if(type==='shifts' && filter) matchesFilter=filter==='pagi' ? String(item.start_time||'')<'12:00' : String(item.start_time||'')>='12:00';
         if(type==='devices' && filter) matchesFilter=String(item.status||'offline')===filter;
         if(type==='leaves' && filter) matchesFilter=String(item.status||'pending')===filter;
+        if(type==='payroll' && filter==='absence') matchesFilter=Number(item.absence_days||0)>0;
+        if(type==='payroll' && filter==='late') matchesFilter=Number(item.late_minutes_total||0)>0;
+        if(type==='payroll' && filter==='complete') matchesFilter=Number(item.scheduled_days||0)>0 && Number(item.attendance_days||0)>=Number(item.scheduled_days||0);
         return matchesQuery && matchesFilter;
       });
     },
@@ -67,7 +70,7 @@ function attendanceApp() {
     async submitLeave() { try { if(!this.leaveForm.employee_id) throw new Error('Pilih karyawan dari hasil pencarian.'); await this.request('/api/leaves',{method:'POST',body:JSON.stringify(this.leaveForm)}); this.leaveModal=false; this.leaveForm={employee_id:'',leave_type_id:'',start_date:today,end_date:today,reason:''}; this.leaveEmployeeQuery=''; await this.loadLeaves(); this.notify('Pengajuan izin disimpan.'); } catch(e) { this.notify(e.message); } },
     async setLeaveStatus(row,status) { try { await this.request(`/api/leaves/${row.id}/status`,{method:'PUT',body:JSON.stringify({status})}); await this.loadLeaves(); this.notify(status==='approved'?'Izin disetujui.':'Izin ditolak.'); } catch(e) { this.notify(e.message); } },
     async loadPayroll() { try { [this.payrollPeriods,this.payrollSettings]=await Promise.all([this.request('/api/payroll/periods'),this.request(`/api/payroll/settings?year=${today.slice(0,4)}`)]); if(this.selectedPayrollPeriod) await this.loadPayrollRecords(); } catch(e) { this.notify(e.message); } },
-    async loadPayrollRecords() { if(!this.selectedPayrollPeriod) { this.payrollRecords=[]; return; } try { this.payrollRecords=await this.request(`/api/payroll/periods/${this.selectedPayrollPeriod}/records`); } catch(e) { this.notify(e.message); } },
+    async loadPayrollRecords() { this.pages.payroll=1; if(!this.selectedPayrollPeriod) { this.payrollRecords=[]; return; } try { this.payrollRecords=await this.request(`/api/payroll/periods/${this.selectedPayrollPeriod}/records`); } catch(e) { this.notify(e.message); } },
     async createPayrollPeriod() { try { const result=await this.request('/api/payroll/periods',{method:'POST',body:JSON.stringify(this.payrollPeriodForm)}); this.payrollPeriodModal=false; this.payrollPeriods=await this.request('/api/payroll/periods'); this.selectedPayrollPeriod=String(result.id); this.payrollPeriodForm={name:'Payroll '+today.slice(0,7),start_date:today.slice(0,8)+'01',end_date:today}; await this.loadPayrollRecords(); this.notify('Periode payroll dibuat.'); } catch(e) { this.notify(e.message); } },
     async calculatePayroll() { try { await this.request(`/api/payroll/periods/${this.selectedPayrollPeriod}/calculate`,{method:'POST'}); await this.loadPayroll(); await this.loadPayrollRecords(); this.notify('Payroll draft berhasil dihitung.'); } catch(e) { this.notify(e.message); } },
     async savePayrollSettings() { try { await this.request(`/api/payroll/settings/${this.payrollSettings.year}`,{method:'PUT',body:JSON.stringify(this.payrollSettings)}); this.notify('Konfigurasi BPJS disimpan.'); } catch(e) { this.notify(e.message); } },
