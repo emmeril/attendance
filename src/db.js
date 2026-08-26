@@ -130,6 +130,9 @@ try { db.exec('ALTER TABLE devices ADD COLUMN machine_port INTEGER NOT NULL DEFA
 try { db.exec('ALTER TABLE employees ADD COLUMN nik TEXT'); } catch (error) {
   if (!/duplicate column name/i.test(error.message)) throw error;
 }
+try { db.exec('ALTER TABLE daily_attendance ADD COLUMN shift_id INTEGER REFERENCES shifts(id) ON DELETE SET NULL'); } catch (error) {
+  if (!/duplicate column name/i.test(error.message)) throw error;
+}
 db.prepare("UPDATE employees SET nik = employee_code WHERE nik IS NULL OR trim(nik) = ''").run();
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_employees_nik ON employees(nik)');
 

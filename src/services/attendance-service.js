@@ -54,34 +54,53 @@ function resolveDevice(payload) {
 }
 
 function rebuildDaily(employeeId, date) {
-  const employee = db.prepare(`
-    SELECT e.id, s.start_time, s.end_time, s.late_tolerance_minutes
-    FROM employees e LEFT JOIN shifts s ON s.id = e.shift_id WHERE e.id = ?
-  `).get(employeeId);
+  const employee = db.prepare('SELECT id, shift_id FROM employees WHERE id = ?').get(employeeId);
   if (!employee) return;
 
-  const logs = db.prepare(`
+  const dayLogs = db.prepare(`
     SELECT scanned_at FROM attendance_logs
     WHERE employee_id = ? AND substr(scanned_at, 1, 10) = ?
     ORDER BY scanned_at ASC
   `).all(employeeId, date);
-  if (!logs.length) return;
+  if (!dayLogs.length) return;
 
-  const first = dayjs(logs[0].scanned_at);
+  const first = dayjs(dayLogs[0].scanned_at);
+  const workDay = String(first.day());
+  let shifts = db.prepare("SELECT * FROM shifts WHERE is_active = 1 ORDER BY start_time").all()
+    .filter(shift => String(shift.work_days || '').split(',').includes(workDay));
+  if (!shifts.length) shifts = db.prepare("SELECT * FROM shifts WHERE is_active = 1 ORDER BY start_time").all();
+  const firstMinutes = first.hour() * 60 + first.minute();
+  const minuteDistance = (time) => {
+    const [hour, minute] = String(time).split(':').map(Number);
+    const difference = Math.abs(firstMinutes - (hour * 60 + minute));
+    return Math.min(difference, 1440 - difference);
+  };
+  shifts.sort((a, b) => minuteDistance(a.start_time) - minuteDistance(b.start_time));
+  const shift = shifts[0] || null;
+  const overnight = shift && shift.end_time <= shift.start_time;
+  let logs = dayLogs;
+  if (overnight) {
+    const nextDate = dayjs(`${date}T00:00:00`).add(1, 'day').format('YYYY-MM-DD');
+    const nextLogs = db.prepare(`SELECT scanned_at FROM attendance_logs WHERE employee_id = ? AND substr(scanned_at,1,10) = ? ORDER BY scanned_at`).all(employeeId, nextDate);
+    const scheduledEnd = dayjs(`${nextDate}T${shift.end_time}:00`).add(4, 'hour');
+    logs = [...dayLogs, ...nextLogs.filter(log => dayjs(log.scanned_at).isBefore(scheduledEnd) || dayjs(log.scanned_at).isSame(scheduledEnd))];
+  }
+
   const last = dayjs(logs[logs.length - 1].scanned_at);
-  const tolerance = employee.late_tolerance_minutes || 0;
+  const tolerance = shift?.late_tolerance_minutes || 0;
   let lateMinutes = 0;
-  if (employee.start_time) {
-    const scheduled = dayjs(`${date}T${employee.start_time}:00`);
+  if (shift?.start_time) {
+    const scheduled = dayjs(`${date}T${shift.start_time}:00`);
     lateMinutes = Math.max(0, first.diff(scheduled, 'minute') - tolerance);
   }
   const workMinutes = logs.length > 1 ? Math.max(0, last.diff(first, 'minute')) : 0;
 
   db.prepare(`
     INSERT INTO daily_attendance
-      (employee_id, attendance_date, check_in, check_out, status, late_minutes, work_minutes, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      (employee_id, attendance_date, shift_id, check_in, check_out, status, late_minutes, work_minutes, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     ON CONFLICT(employee_id, attendance_date) DO UPDATE SET
+      shift_id = excluded.shift_id,
       check_in = excluded.check_in,
       check_out = excluded.check_out,
       status = excluded.status,
@@ -91,12 +110,24 @@ function rebuildDaily(employeeId, date) {
   `).run(
     employeeId,
     date,
+    shift?.id || employee.shift_id || null,
     logs[0].scanned_at,
     logs.length > 1 ? logs[logs.length - 1].scanned_at : null,
     lateMinutes > 0 ? 'terlambat' : 'hadir',
     lateMinutes,
     workMinutes
   );
+}
+
+function rebuildForScan(employeeId, scanned) {
+  const date = scanned.format('YYYY-MM-DD');
+  const previousDate = scanned.subtract(1, 'day').format('YYYY-MM-DD');
+  rebuildDaily(employeeId, previousDate);
+  const consumedByPreviousShift = db.prepare(`
+    SELECT 1 FROM daily_attendance da JOIN shifts s ON s.id=da.shift_id
+    WHERE da.employee_id=? AND da.attendance_date=? AND s.end_time<=s.start_time AND da.check_out=?
+  `).get(employeeId, previousDate, scanned.format('YYYY-MM-DDTHH:mm:ssZ'));
+  if (!consumedByPreviousShift) rebuildDaily(employeeId, date);
 }
 
 function ingestOne(payload, source = 'device') {
@@ -115,7 +146,7 @@ function ingestOne(payload, source = 'device') {
   if (existingLog) {
     db.prepare(`UPDATE attendance_logs SET employee_code = ?, employee_id = ?, device_id = COALESCE(device_id, ?) WHERE id = ?`)
       .run(employee.employee_code, employee.id, device?.id || null, existingLog.id);
-    rebuildDaily(employee.id, scanned.format('YYYY-MM-DD'));
+    rebuildForScan(employee.id, scanned);
     return { inserted: false, matched: true, employeeCode: employee.employee_code, scannedAt };
   }
 
@@ -143,7 +174,7 @@ function ingestOne(payload, source = 'device') {
       WHERE device_serial = ? AND employee_code = ? AND scanned_at = ?
     `).run(employee?.id || null, device?.id || null, serial, code, scannedAt);
   }
-  if (employee) rebuildDaily(employee.id, scanned.format('YYYY-MM-DD'));
+  if (employee) rebuildForScan(employee.id, scanned);
   return { inserted: Boolean(result.changes), matched: Boolean(employee), employeeCode: code, scannedAt };
 }
 

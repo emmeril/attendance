@@ -173,7 +173,7 @@
                                                 <th>Tanggal</th>
                                                 <th>Karyawan</th>
                                                 <th>NIK</th>
-                                                <th>Shift</th>
+                                                <th>Jam Kerja</th>
                                                 <th>Masuk</th>
                                                 <th>Pulang</th>
                                                 <th>Status</th>
@@ -223,7 +223,7 @@
                                                 <th>NIK</th>
                                                 <th>Nama</th>
                                                 <th>Departemen</th>
-                                                <th>Shift</th>
+                                                <th>Jam Kerja</th>
                                                 <th>Nomor Mesin</th>
                                                 <th>Aksi</th>
                                             </tr>
@@ -280,7 +280,7 @@
                                                     <td x-text="workDays(row.work_days)"></td>
                                                     <td class="table-actions"><button class="icon-action" title="Edit" @click="editShift(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteShift(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
-                                            </template><tr x-show="!filteredData('shifts',shifts).length"><td colspan="6" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Shift tidak ditemukan.</span></td></tr></tbody>
+                                            </template><tr x-show="!filteredData('shifts',shifts).length"><td colspan="6" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Jam kerja tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
                                 <div class="data-footer"><span x-text="rangeText('shifts',shifts)"></span><div class="pager"><button @click="changePage('shifts',shifts,-1)" :disabled="pages.shifts<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.shifts"></strong> / <span x-text="pageCount('shifts',shifts)"></span></span><button @click="changePage('shifts',shifts,1)" :disabled="pages.shifts>=pageCount('shifts',shifts)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
@@ -364,8 +364,8 @@
                         x-model="employeeForm.department"></div>
                 <div class="col-sm-6"><label>Jabatan</label><input class="form-control" x-model="employeeForm.position">
                 </div>
-                <div class="col-sm-6"><label>Shift</label><select class="form-select" x-model="employeeForm.shift_id">
-                        <option value="">Tanpa shift</option><template x-for="shift in shifts" :key="shift.id">
+                <div class="col-sm-6"><label>Jam kerja default <small class="field-hint">Absensi tetap dideteksi otomatis</small></label><select class="form-select" x-model="employeeForm.shift_id">
+                        <option value="">Otomatis dari waktu scan</option><template x-for="shift in shifts" :key="shift.id">
                             <option :value="shift.id" x-text="shift.name"></option>
                         </template>
                     </select></div>

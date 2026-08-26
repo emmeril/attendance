@@ -12,13 +12,16 @@ function seed() {
       );
     }
 
-    let shift = db.prepare('SELECT id FROM shifts LIMIT 1').get();
+    let shift = db.prepare("SELECT id FROM shifts WHERE lower(name) = 'reguler' LIMIT 1").get();
     if (!shift) {
       const result = db.prepare(`
         INSERT INTO shifts (name, start_time, end_time, late_tolerance_minutes, work_days)
-        VALUES ('Reguler', '08:00', '17:00', 10, '1,2,3,4,5')
+        VALUES ('Reguler', '07:00', '17:00', 10, '1,2,3,4,5')
       `).run();
       shift = { id: result.lastInsertRowid };
+    }
+    if (!db.prepare("SELECT id FROM shifts WHERE lower(name) = 'shift 3' LIMIT 1").get()) {
+      db.prepare(`INSERT INTO shifts (name,start_time,end_time,late_tolerance_minutes,work_days) VALUES ('Shift 3','21:00','07:00',10,'1,2,3,4,5,6,0')`).run();
     }
 
     const insertEmployee = db.prepare(`
@@ -41,4 +44,3 @@ function seed() {
 
 if (require.main === module) seed();
 module.exports = seed;
-

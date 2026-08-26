@@ -82,3 +82,17 @@ test('machine users map to employee records', () => {
   const employee = require('../src/db').prepare('SELECT name, device_user_id FROM employees WHERE device_user_id = ?').get('TEST-USER-1');
   assert.deepEqual(employee, { name: 'Mesin Test', device_user_id: 'TEST-USER-1' });
 });
+
+test('overnight attendance is assigned to one automatic work schedule', () => {
+  const db = require('../src/db');
+  const { ingestOne } = require('../src/services/attendance-service');
+  const shift = db.prepare("SELECT id FROM shifts WHERE name = 'Shift 3'").get();
+  const employee = db.prepare(`INSERT INTO employees (employee_code,nik,name) VALUES ('SHIFT-TEST','NIK-SHIFT-TEST','Karyawan Shift Test')`).run();
+  ingestOne({ employee_code: 'SHIFT-TEST', device_serial: 'SHIFT-DEVICE', scanned_at: '2026-08-24T21:00:00+07:00' });
+  ingestOne({ employee_code: 'SHIFT-TEST', device_serial: 'SHIFT-DEVICE', scanned_at: '2026-08-25T07:00:00+07:00' });
+  const rows = db.prepare('SELECT attendance_date,shift_id,check_in,check_out FROM daily_attendance WHERE employee_id=? ORDER BY attendance_date').all(employee.lastInsertRowid);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].attendance_date, '2026-08-24');
+  assert.equal(rows[0].shift_id, shift.id);
+  assert.match(rows[0].check_out, /2026-08-25T07:00:00/);
+});
