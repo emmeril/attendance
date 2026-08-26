@@ -212,7 +212,7 @@
                                         Tambah karyawan</button>
                                 </div>
                                 <div class="data-toolbar">
-                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, kode, ID mesin..." x-model="queries.employees" @input="resetPage('employees')"></label>
+                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, employee code, ID mesin..." x-model="queries.employees" @input="resetPage('employees')"></label>
                                     <select class="form-select toolbar-select" x-model="filters.employees" @change="resetPage('employees')"><option value="">Semua departemen</option><template x-for="value in uniqueValues(employees,'department')" :key="value"><option :value="value" x-text="value"></option></template></select>
                                     <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.employees" @change="resetPage('employees')"><option :value="10">10</option><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label>
                                 </div>
@@ -220,7 +220,7 @@
                                     <table class="table align-middle">
                                         <thead>
                                             <tr>
-                                                <th>Kode</th>
+                                                <th>Employee Code</th>
                                                 <th>Nama</th>
                                                 <th>Departemen</th>
                                                 <th>Shift</th>
@@ -356,8 +356,8 @@
                 <h5 x-text="editingEmployee ? 'Edit karyawan' : 'Tambah karyawan'"></h5><button type="button" class="modal-close" aria-label="Tutup" @click="employeeModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
-                <div class="col-sm-4"><label>Kode karyawan</label><input class="form-control"
-                        x-model="employeeForm.employee_code" required></div>
+                <div class="col-sm-4"><label>Employee Code</label><input class="form-control"
+                        x-model="employeeForm.employee_code" placeholder="Contoh: EMP-001" required></div>
                 <div class="col-sm-8"><label>Nama lengkap</label><input class="form-control" x-model="employeeForm.name"
                         required></div>
                 <div class="col-sm-6"><label>Departemen</label><input class="form-control"

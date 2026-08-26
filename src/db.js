@@ -95,6 +95,17 @@ db.exec(`
     UNIQUE(employee_id, attendance_date)
   );
 
+  CREATE TABLE IF NOT EXISTS employee_device_ids (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL,
+    device_id INTEGER NOT NULL,
+    device_user_id TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(device_id, device_user_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS sync_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     device_id INTEGER,

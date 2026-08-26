@@ -18,13 +18,15 @@ function localTime(value) {
 function resolveEmployee(payload) {
   const code = String(payload.employee_code || payload.employeeCode || payload.pin || payload.user_id || payload.userId || '').trim();
   if (!code) throw new Error('employee_code/pin/user_id wajib tersedia');
+  const deviceId = Number(payload.device_id || 0);
 
   const employee = db.prepare(`
     SELECT e.*, s.start_time, s.end_time, s.late_tolerance_minutes
     FROM employees e LEFT JOIN shifts s ON s.id = e.shift_id
     WHERE e.employee_code = ? OR e.device_user_id = ?
+      OR (? > 0 AND EXISTS (SELECT 1 FROM employee_device_ids x WHERE x.employee_id=e.id AND x.device_id=? AND x.device_user_id=?))
     LIMIT 1
-  `).get(code, code);
+  `).get(code, code, deviceId, deviceId, code);
 
   return { code: employee?.employee_code || code, employee };
 }
@@ -90,8 +92,8 @@ function ingestOne(payload, source = 'device') {
   const scannedValue = payload.scanned_at || payload.scan_time || payload.timestamp || payload.datetime || payload.attendance_time;
   const scanned = localTime(scannedValue);
   const scannedAt = scanned.format('YYYY-MM-DDTHH:mm:ssZ');
-  const { code, employee } = resolveEmployee(payload);
   const { serial, device } = resolveDevice(payload);
+  const { code, employee } = resolveEmployee({ ...payload, device_id: device?.id || payload.device_id });
 
   const result = db.prepare(`
     INSERT OR IGNORE INTO attendance_logs

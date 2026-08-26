@@ -20,7 +20,7 @@ async function testConnection(device) {
   return withMachine(device, async (zk, host) => ({ ok: true, connected: true, host, port: Number(device.machine_port || 4370), info: await zk.getInfo() }));
 }
 
-function syncUsers(users) {
+function syncUsers(users, deviceId = null) {
   const upsert = db.transaction((items) => {
     let inserted = 0;
     let updated = 0;
@@ -28,11 +28,12 @@ function syncUsers(users) {
       const deviceUserId = String(user.userId ?? user.uid ?? '').trim();
       if (!deviceUserId) continue;
       const name = String(user.name || '').trim() || `Pengguna ${deviceUserId}`;
-      const existing = db.prepare(`
+      const mapped = deviceId ? db.prepare('SELECT employee_id FROM employee_device_ids WHERE device_id = ? AND device_user_id = ?').get(deviceId, deviceUserId) : null;
+      const existing = mapped ? db.prepare('SELECT id FROM employees WHERE id = ?').get(mapped.employee_id) : db.prepare(`
         SELECT id FROM employees
-        WHERE device_user_id = ? OR employee_code = ?
+        WHERE device_user_id = ? OR employee_code = ? OR LOWER(TRIM(name)) = LOWER(TRIM(?))
         LIMIT 1
-      `).get(deviceUserId, deviceUserId);
+      `).get(deviceUserId, deviceUserId, name);
       if (existing) {
         db.prepare(`UPDATE employees SET name = ?, device_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
           .run(name, deviceUserId, existing.id);
@@ -41,6 +42,10 @@ function syncUsers(users) {
         db.prepare(`INSERT INTO employees (employee_code, name, device_user_id) VALUES (?, ?, ?)`)
           .run(deviceUserId, name, deviceUserId);
         inserted += 1;
+      }
+      if (deviceId) {
+        const employeeId = existing?.id || db.prepare('SELECT id FROM employees WHERE employee_code = ?').get(deviceUserId)?.id;
+        if (employeeId) db.prepare('INSERT OR IGNORE INTO employee_device_ids (employee_id, device_id, device_user_id) VALUES (?, ?, ?)').run(employeeId, deviceId, deviceUserId);
       }
     }
     return { inserted, updated, total: items.length };
@@ -55,7 +60,7 @@ async function pullAttendance(device) {
     const info = await zk.getInfo();
     const usersResponse = await zk.getUsers();
     const users = usersResponse.data || [];
-    const usersSync = syncUsers(users);
+    const usersSync = syncUsers(users, device.id);
     // Some firmware closes the data channel when there are no logs. Avoid the
     // node-zklib empty-packet bug by checking the log counter first.
     if (!info.logCounts) return { received: 0, inserted: 0, unmatched: 0, results: [], users: usersSync };
@@ -66,6 +71,7 @@ async function pullAttendance(device) {
       device_serial: device.serial_number,
       verify_mode: 'fingerprint',
       event_type: 'device'
+      , device_id: device.id
     }));
     return { ...ingestMany(records, 'solution-direct'), users: usersSync };
   });
