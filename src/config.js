@@ -28,6 +28,7 @@ module.exports = {
     attendancePath: process.env.SOLUTION_ATTENDANCE_PATH || '/api/attendance',
     timeoutMs: Number(process.env.SOLUTION_TIMEOUT_MS || 20000),
     webhookSecret: process.env.SOLUTION_WEBHOOK_SECRET || 'change-me-webhook-secret',
-    verifyTls: process.env.SOLUTION_VERIFY_TLS !== 'false'
+    verifyTls: process.env.SOLUTION_VERIFY_TLS !== 'false',
+    admsAutoRegister: process.env.SOLUTION_ADMS_AUTO_REGISTER !== 'false'
   }
 };

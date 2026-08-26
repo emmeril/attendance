@@ -10,7 +10,7 @@ const db = require('./db');
 const config = require('./config');
 const seed = require('./seed');
 const { ingestMany } = require('./services/attendance-service');
-const solution = require('./services/solution-cloud');
+const adms = require('./services/adms');
 const { encrypt } = require('./services/secrets');
 const ejs = require('ejs');
 
@@ -35,10 +35,45 @@ app.use('/vendor/bootstrap-icons', express.static(path.join(config.rootDir, 'nod
 app.use('/vendor/alpinejs', express.static(path.join(config.rootDir, 'node_modules', 'alpinejs', 'dist')));
 app.use('/assets', express.static(path.join(config.rootDir, 'src', 'public')));
 
+// Solution machines use the ZKTeco-compatible ADMS protocol and push data to us.
+app.use('/iclock', express.text({ type: '*/*', limit: '2mb' }));
+app.get(['/iclock/cdata', '/iclock/cdata.aspx'], (req, res) => {
+  const serial = String(req.query.SN || req.query.sn || '').trim();
+  if (!serial) return res.status(400).type('text').send('ERROR: Missing SN');
+  if (!config.solution.admsAutoRegister && !db.prepare('SELECT id FROM devices WHERE serial_number = ?').get(serial)) {
+    return res.status(403).type('text').send('ERROR: Unknown device');
+  }
+  adms.ensureDevice(serial);
+  return res.type('text').send(req.query.options === 'all' ? adms.optionsResponse(serial) : 'OK');
+});
+app.post(['/iclock/cdata', '/iclock/cdata.aspx'], (req, res) => {
+  const serial = String(req.query.SN || req.query.sn || '').trim();
+  if (!serial) return res.status(400).type('text').send('ERROR: Missing SN');
+  if (!config.solution.admsAutoRegister && !db.prepare('SELECT id FROM devices WHERE serial_number = ?').get(serial)) {
+    return res.status(403).type('text').send('ERROR: Unknown device');
+  }
+  try {
+    const { result } = adms.ingestAttlog(req.body, serial);
+    return res.type('text').send('OK');
+  } catch (error) {
+    return res.status(400).type('text').send(`ERROR: ${error.message}`);
+  }
+});
+app.get(['/iclock/getrequest', '/iclock/getrequest.aspx'], (req, res) => res.type('text').send('OK'));
+app.post(['/iclock/devicecmd', '/iclock/devicecmd.aspx'], (req, res) => res.type('text').send('OK'));
+
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: true, legacyHeaders: false });
 const isAuthenticated = (req, res, next) => req.session.user ? next() : (req.path.startsWith('/api/') ? res.status(401).json({ error: 'Unauthenticated' }) : res.redirect('/login'));
 
-app.use((req, res, next) => { res.locals.user = req.session.user; res.locals.appName = config.appName; next(); });
+app.use((req, res, next) => {
+  const publicUrl = new URL(config.appUrl);
+  res.locals.user = req.session.user;
+  res.locals.appName = config.appName;
+  res.locals.appUrl = config.appUrl;
+  res.locals.admsHost = publicUrl.hostname;
+  res.locals.admsPort = publicUrl.port || (publicUrl.protocol === 'https:' ? '443' : '80');
+  next();
+});
 
 app.get('/login', (req, res) => req.session.user ? res.redirect('/') : res.render('login', { error: null }));
 app.post('/login', loginLimiter, (req, res) => {
@@ -82,8 +117,14 @@ app.post('/api/shifts', isAuthenticated, (req, res) => { const x=req.body; try {
 
 app.get('/api/devices', isAuthenticated, (req, res) => res.json(db.prepare('SELECT id,serial_number,name,location,model,provider,external_id,api_url,status,last_seen_at,last_sync_at,is_active,created_at FROM devices ORDER BY name').all()));
 app.post('/api/devices', isAuthenticated, (req, res) => { const x=req.body; try { const r=db.prepare('INSERT INTO devices (serial_number,name,location,model,provider,external_id,api_url,api_token) VALUES (?,?,?,?,?,?,?,?)').run(x.serial_number,x.name,x.location||null,x.model||null,x.provider||'solution',x.external_id||null,x.api_url||null,encrypt(x.api_token)); res.status(201).json({id:r.lastInsertRowid}); } catch(e) { res.status(400).json({error:e.message}); } });
-app.post('/api/devices/:id/test', isAuthenticated, async (req, res) => { const d=db.prepare('SELECT * FROM devices WHERE id=?').get(req.params.id); if(!d) return res.status(404).json({error:'Perangkat tidak ditemukan'}); try { const result=await solution.testConnection(d); db.prepare("UPDATE devices SET status='online',last_seen_at=CURRENT_TIMESTAMP WHERE id=?").run(d.id); res.json(result); } catch(e) { db.prepare("UPDATE devices SET status='offline' WHERE id=?").run(d.id); res.status(502).json({error:e.response?.data?.message||e.message}); } });
-app.post('/api/devices/:id/sync', isAuthenticated, async (req, res) => { const d=db.prepare('SELECT * FROM devices WHERE id=?').get(req.params.id); if(!d) return res.status(404).json({error:'Perangkat tidak ditemukan'}); try { const result=await solution.pullAttendance(d, req.body.from, req.body.to); res.json(result); } catch(e) { res.status(502).json({error:e.response?.data?.message||e.message}); } });
+app.post('/api/devices/:id/test', isAuthenticated, (req, res) => {
+  const d = db.prepare('SELECT id,name,status,last_seen_at FROM devices WHERE id=?').get(req.params.id);
+  if (!d) return res.status(404).json({ error: 'Perangkat tidak ditemukan' });
+  const lastSeen = d.last_seen_at ? Date.parse(`${d.last_seen_at}Z`) : NaN;
+  const connected = Number.isFinite(lastSeen) && (Date.now() - lastSeen) < 5 * 60 * 1000;
+  return res.json({ ok: connected, connected, status: connected ? 'online' : 'offline', last_seen_at: d.last_seen_at, message: connected ? 'Mesin terakhir terhubung.' : 'Belum ada koneksi ADMS dari mesin.' });
+});
+app.post('/api/devices/:id/sync', isAuthenticated, (req, res) => res.status(400).json({ error: 'Mode ADMS mengirim data otomatis. Tekan Tes koneksi setelah mengatur server ADMS pada mesin.' }));
 
 app.get('/api/attendance', isAuthenticated, (req, res) => { const from=String(req.query.from||new Date().toISOString().slice(0,10)); const to=String(req.query.to||from); const rows=db.prepare(`SELECT da.*,e.employee_code,e.name,e.department,s.name shift_name FROM daily_attendance da JOIN employees e ON e.id=da.employee_id LEFT JOIN shifts s ON s.id=e.shift_id WHERE da.attendance_date BETWEEN ? AND ? ORDER BY da.attendance_date DESC,e.name`).all(from,to); res.json(rows); });
 app.get('/api/attendance/logs', isAuthenticated, (req, res) => res.json(db.prepare(`SELECT a.*,e.name employee_name,d.name device_name FROM attendance_logs a LEFT JOIN employees e ON e.id=a.employee_id LEFT JOIN devices d ON d.id=a.device_id ORDER BY a.scanned_at DESC LIMIT 200`).all()));

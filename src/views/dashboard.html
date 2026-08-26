@@ -261,6 +261,9 @@
                                     </div><button class="btn btn-primary" @click="deviceModal=true"><i
                                             class="bi bi-plus-lg"></i> Daftar perangkat</button>
                                 </div>
+                                <div class="alert alert-info small"><strong>Pengaturan ADMS mesin:</strong> isi server
+                                    <code><%= admsHost %></code> dan port <code><%= admsPort %></code>. Mesin akan
+                                    memanggil endpoint <code>/iclock</code> dan mengirim absensi otomatis.</div>
                                 <div class="row g-3"><template x-for="row in devices" :key="row.id">
                                         <div class="col-md-6 col-xl-4">
                                             <div class="device-card">
@@ -275,9 +278,7 @@
                                                 <p class="small text-muted"
                                                     x-text="row.location || 'Lokasi belum diatur'"></p>
                                                 <div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary"
-                                                        @click="testDevice(row)">Tes koneksi</button><button
-                                                        class="btn btn-sm btn-outline-secondary"
-                                                        @click="syncDevice(row)">Sinkronkan</button></div>
+                                                        @click="testDevice(row)">Tes koneksi</button></div>
                                             </div>
                                         </div>
                                     </template></div>

@@ -8,7 +8,9 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 function localTime(value) {
-  const parsed = dayjs(value);
+  const text = String(value || '');
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
+  const parsed = hasTimezone ? dayjs(text) : dayjs.tz(text, config.timezone);
   if (!parsed.isValid()) throw new Error(`Waktu scan tidak valid: ${value}`);
   return parsed.tz(config.timezone);
 }
@@ -124,4 +126,3 @@ function ingestMany(records, source = 'device') {
 }
 
 module.exports = { ingestOne, ingestMany, rebuildDaily };
-

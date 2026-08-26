@@ -22,6 +22,15 @@ test('unauthenticated dashboard redirects to login', async () => {
   assert.equal(response.headers.location, '/login');
 });
 
+test('authenticated dashboard renders the ADMS connection instructions', async () => {
+  const agent = request.agent(app);
+  const login = await agent.post('/login').type('form').send({ email: 'admin@attendance.local', password: 'admin123' });
+  assert.equal(login.status, 302);
+  const dashboard = await agent.get('/');
+  assert.equal(dashboard.status, 200);
+  assert.match(dashboard.text, /Pengaturan ADMS mesin/);
+});
+
 test('solution webhook rejects an invalid secret when configured', async () => {
   const response = await request(app).post('/api/webhooks/solution').send({});
   assert.equal(response.status, 401);
@@ -41,4 +50,21 @@ test('device API tokens are encrypted reversibly', () => {
   const encrypted = encrypt('vendor-token');
   assert.notEqual(encrypted, 'vendor-token');
   assert.equal(decrypt(encrypted), 'vendor-token');
+});
+
+test('ADMS handshake and attendance push are accepted', async () => {
+  const options = await request(app).get('/iclock/cdata?SN=ADMS-TEST-001&options=all');
+  assert.equal(options.status, 200);
+  assert.match(options.text, /GET OPTION FROM: ADMS-TEST-001/);
+
+  const push = await request(app)
+    .post('/iclock/cdata?SN=ADMS-TEST-001&table=ATTLOG')
+    .set('content-type', 'text/plain')
+    .send('1\t2026-08-24 09:00:00\t0\t1\t0');
+  assert.equal(push.status, 200);
+  assert.equal(push.text, 'OK');
+  const device = require('../src/db').prepare('SELECT status FROM devices WHERE serial_number = ?').get('ADMS-TEST-001');
+  assert.equal(device.status, 'online');
+  const log = require('../src/db').prepare('SELECT scanned_at FROM attendance_logs WHERE device_serial = ?').get('ADMS-TEST-001');
+  assert.equal(log.scanned_at, '2026-08-24T09:00:00+07:00');
 });

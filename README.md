@@ -1,6 +1,6 @@
 # HadirKu — Manajemen Absensi Multi-Device
 
-Aplikasi absensi berbasis Express.js, SQLite, AdminLTE, dan Alpine.js. Data dari banyak mesin Solution Finger dapat masuk melalui webhook atau ditarik secara berkala menggunakan adapter REST Solution Cloud.
+Aplikasi absensi berbasis Express.js, SQLite, AdminLTE, dan Alpine.js. Data mesin Solution Finger diterima melalui protokol ADMS/Cloud Data (push realtime) atau webhook.
 
 ## Menjalankan
 
@@ -17,7 +17,14 @@ Gunakan Node.js 20 atau lebih baru. Untuk production, isi juga `DATA_ENCRYPTION_
 
 ## Integrasi Solution Cloud / Solution Finger
 
-Endpoint tiap akun Solution Cloud dapat berbeda. Isi `SOLUTION_BASE_URL`, `SOLUTION_API_KEY`, path perangkat dan path attendance di `.env` sesuai dokumentasi/vendor Anda. Format records yang diterima adapter mencakup `employee_code` (atau `pin`/`user_id`), `device_serial` (atau `sn`), dan `scanned_at` (atau `timestamp`).
+Solution Cloud publik tidak menyediakan endpoint REST `/api/devices` atau `/api/attendance`. Mesin Solution umumnya memakai protokol ADMS yang mengirim data ke server. Aplikasi ini menyediakan endpoint kompatibel ADMS di `/iclock`.
+
+1. Pastikan `APP_URL` berisi alamat yang dapat dijangkau mesin (contoh `http://192.168.1.20:3000` untuk satu LAN, atau domain publik bila mesin berada di lokasi berbeda).
+2. Pada mesin, buka menu **ADMS / Cloud Data**, pilih URL server, isi hostname/IP dari `APP_URL` tanpa `/iclock` dan port aplikasi (default `3000`), lalu aktifkan realtime. Firmware akan menambahkan path `/iclock` sendiri.
+3. Daftarkan serial mesin di menu **Perangkat Finger**. Jika `SOLUTION_ADMS_AUTO_REGISTER=true`, mesin juga akan dibuat otomatis saat koneksi pertamanya.
+4. Tekan **Tes koneksi** setelah mesin melakukan sinkronisasi. Status berubah online ketika mesin mengakses `/iclock/cdata`.
+
+Format ADMS `ATTLOG` (PIN, waktu, status, verifikasi) diterjemahkan otomatis ke `attendance_logs` dan rekap harian.
 
 - **Webhook:** arahkan vendor ke `POST /api/webhooks/solution`, dengan header `x-webhook-secret`.
 - **Pull:** daftarkan perangkat pada menu Perangkat Finger, lalu gunakan tombol Tes koneksi dan Sinkronkan.
