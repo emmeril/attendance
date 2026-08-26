@@ -158,7 +158,7 @@
                                     </div>
                                     <div class="d-flex gap-2"><input type="date" class="form-control"
                                             x-model="from"><input type="date" class="form-control" x-model="to"><button
-                                            class="btn btn-primary" @click="loadAttendance">Tampilkan</button></div>
+                                            class="btn btn-primary" @click="loadAttendance">Tampilkan</button><button class="btn btn-primary" @click="newAttendance"><i class="fa-solid fa-plus"></i> Tambah</button></div>
                                 </div>
                                 <div class="data-toolbar">
                                     <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, kode, tanggal..." x-model="queries.attendance" @input="resetPage('attendance')"></label>
@@ -176,6 +176,7 @@
                                                 <th>Pulang</th>
                                                 <th>Status</th>
                                                 <th>Terlambat</th>
+                                                <th>Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody><template x-for="row in pagedData('attendance',attendance)" :key="row.id">
@@ -191,8 +192,9 @@
                                                             :class="row.status==='terlambat'?'text-bg-warning':'text-bg-success'"
                                                             x-text="row.status"></span></td>
                                                     <td x-text="row.late_minutes + ' mnt'"></td>
+                                                    <td class="table-actions"><button class="icon-action" title="Edit" @click="editAttendance(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteAttendance(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
-                                            </template><tr x-show="!filteredData('attendance',attendance).length"><td colspan="7" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Data absensi tidak ditemukan.</span></td></tr></tbody>
+                                            </template><tr x-show="!filteredData('attendance',attendance).length"><td colspan="8" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Data absensi tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
                                 <div class="data-footer"><span x-text="rangeText('attendance',attendance)"></span><div class="pager"><button @click="changePage('attendance',attendance,-1)" :disabled="pages.attendance<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.attendance"></strong> / <span x-text="pageCount('attendance',attendance)"></span></span><button @click="changePage('attendance',attendance,1)" :disabled="pages.attendance>=pageCount('attendance',attendance)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
@@ -205,7 +207,7 @@
                                         <p class="eyebrow mb-1">PEOPLE DIRECTORY</p>
                                         <h5>Daftar karyawan</h5>
                                     </div><button class="btn btn-primary"
-                                        @click="employeeModal=true; editingEmployee=null"><i class="fa-solid fa-plus"></i>
+                                        @click="editingEmployee=null; employeeForm={employee_code:'',name:'',department:'',position:'',shift_id:'',device_user_id:''}; employeeModal=true"><i class="fa-solid fa-plus"></i>
                                         Tambah karyawan</button>
                                 </div>
                                 <div class="data-toolbar">
@@ -222,6 +224,7 @@
                                                 <th>Departemen</th>
                                                 <th>Shift</th>
                                                 <th>ID perangkat</th>
+                                                <th>Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody><template x-for="row in pagedData('employees',employees)" :key="row.id">
@@ -233,8 +236,9 @@
                                                     <td x-text="row.department || '—'"></td>
                                                     <td x-text="row.shift_name || '—'"></td>
                                                     <td x-text="row.device_user_id || '—'"></td>
+                                                    <td class="table-actions"><button class="icon-action" title="Edit" @click="editEmployee(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteEmployee(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
-                                            </template><tr x-show="!filteredData('employees',employees).length"><td colspan="5" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Karyawan tidak ditemukan.</span></td></tr></tbody>
+                                            </template><tr x-show="!filteredData('employees',employees).length"><td colspan="6" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Karyawan tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
                                 <div class="data-footer"><span x-text="rangeText('employees',employees)"></span><div class="pager"><button @click="changePage('employees',employees,-1)" :disabled="pages.employees<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.employees"></strong> / <span x-text="pageCount('employees',employees)"></span></span><button @click="changePage('employees',employees,1)" :disabled="pages.employees>=pageCount('employees',employees)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
@@ -246,7 +250,7 @@
                                     <div>
                                         <p class="eyebrow mb-1">WORK PATTERN</p>
                                         <h5>Pengaturan shift</h5>
-                                    </div><button class="btn btn-primary" @click="shiftModal=true"><i
+                                    </div><button class="btn btn-primary" @click="editingShift=null; shiftForm={name:'',start_time:'08:00',end_time:'17:00',late_tolerance_minutes:10,work_days:'1,2,3,4,5'}; shiftModal=true"><i
                                             class="fa-solid fa-plus"></i> Tambah shift</button>
                                 </div>
                                 <div class="data-toolbar">
@@ -263,6 +267,7 @@
                                                 <th>Jam pulang</th>
                                                 <th>Toleransi</th>
                                                 <th>Hari kerja</th>
+                                                <th>Aksi</th>
                                             </tr>
                                         </thead>
                                         <tbody><template x-for="row in pagedData('shifts',shifts)" :key="row.id">
@@ -272,8 +277,9 @@
                                                     <td x-text="row.end_time"></td>
                                                     <td x-text="row.late_tolerance_minutes + ' menit'"></td>
                                                     <td x-text="workDays(row.work_days)"></td>
+                                                    <td class="table-actions"><button class="icon-action" title="Edit" @click="editShift(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteShift(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
-                                            </template><tr x-show="!filteredData('shifts',shifts).length"><td colspan="5" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Shift tidak ditemukan.</span></td></tr></tbody>
+                                            </template><tr x-show="!filteredData('shifts',shifts).length"><td colspan="6" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Shift tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
                                 <div class="data-footer"><span x-text="rangeText('shifts',shifts)"></span><div class="pager"><button @click="changePage('shifts',shifts,-1)" :disabled="pages.shifts<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.shifts"></strong> / <span x-text="pageCount('shifts',shifts)"></span></span><button @click="changePage('shifts',shifts,1)" :disabled="pages.shifts>=pageCount('shifts',shifts)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
@@ -285,7 +291,7 @@
                                     <div>
                                         <p class="eyebrow mb-1">FINGERPRINT NETWORK</p>
                                         <h5>Perangkat Solution Finger</h5>
-                                    </div><button class="btn btn-primary" @click="deviceModal=true"><i
+                                    </div><button class="btn btn-primary" @click="editingDevice=null; deviceForm={serial_number:'',name:'',location:'',model:'',external_id:'',api_url:'',machine_port:4370,api_token:''}; deviceModal=true"><i
                                             class="fa-solid fa-plus"></i> Daftar perangkat</button>
                                 </div>
                                 <div class="alert alert-info small"><strong>Koneksi mesin:</strong> IP mesin sudah
@@ -317,7 +323,7 @@
                                                 <div class="d-flex gap-2"><button class="btn btn-sm btn-outline-primary"
                                                         @click="testDevice(row)">Tes koneksi</button><button
                                                         class="btn btn-sm btn-outline-secondary" @click="syncDevice(row)"
-                                                        x-show="row.api_url">Ambil data</button></div>
+                                                        x-show="row.api_url">Ambil data</button><button class="icon-action" title="Edit" @click="editDevice(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteDevice(row)"><i class="fa-solid fa-trash"></i></button></div>
                                             </div>
                                         </div>
                                     </template><div class="col-12" x-show="!filteredData('devices',devices).length"><div class="empty-cards"><i class="fa-regular fa-folder-open"></i><span>Perangkat tidak ditemukan.</span></div></div></div>
@@ -327,10 +333,27 @@
                     </div>
         </main>
     </div>
+    <div class="modal-shell" x-cloak x-show="attendanceModal" x-transition.opacity>
+        <form class="modal-card" @submit.prevent="saveAttendance">
+            <div class="panel-head">
+                <h5 x-text="editingAttendance ? 'Edit data absensi' : 'Tambah data absensi'"></h5><button type="button" class="modal-close" aria-label="Tutup" @click="attendanceModal=false"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="row g-3">
+                <div class="col-12" x-show="!editingAttendance"><label>Karyawan</label><select class="form-select" x-model="attendanceForm.employee_id" :required="!editingAttendance"><option value="">Pilih karyawan</option><template x-for="employee in employees" :key="employee.id"><option :value="employee.id" x-text="employee.employee_code + ' - ' + employee.name"></option></template></select></div>
+                <div class="col-sm-6"><label>Tanggal</label><input type="date" class="form-control" x-model="attendanceForm.attendance_date" required></div>
+                <div class="col-sm-6"><label>Status</label><select class="form-select" x-model="attendanceForm.status"><option value="hadir">Hadir</option><option value="terlambat">Terlambat</option><option value="izin">Izin</option><option value="sakit">Sakit</option><option value="alpha">Alpha</option></select></div>
+                <div class="col-sm-6"><label>Jam masuk</label><input type="datetime-local" class="form-control" x-model="attendanceForm.check_in"></div>
+                <div class="col-sm-6"><label>Jam pulang</label><input type="datetime-local" class="form-control" x-model="attendanceForm.check_out"></div>
+                <div class="col-sm-6"><label>Terlambat (menit)</label><input type="number" min="0" class="form-control" x-model="attendanceForm.late_minutes"></div>
+                <div class="col-sm-6"><label>Durasi kerja (menit)</label><input type="number" min="0" class="form-control" x-model="attendanceForm.work_minutes"></div>
+                <div class="col-12"><label>Catatan</label><textarea class="form-control" rows="3" x-model="attendanceForm.notes"></textarea></div>
+            </div><button class="btn btn-primary w-100 mt-4" x-text="editingAttendance ? 'Simpan perubahan' : 'Tambah absensi'"></button>
+        </form>
+    </div>
     <div class="modal-shell" x-cloak x-show="employeeModal" x-transition.opacity>
         <form class="modal-card" @submit.prevent="saveEmployee">
             <div class="panel-head">
-                <h5>Tambah karyawan</h5><button type="button" class="modal-close" aria-label="Tutup" @click="employeeModal=false"><i class="fa-solid fa-xmark"></i></button>
+                <h5 x-text="editingEmployee ? 'Edit karyawan' : 'Tambah karyawan'"></h5><button type="button" class="modal-close" aria-label="Tutup" @click="employeeModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
                 <div class="col-sm-4"><label>Kode karyawan</label><input class="form-control"
@@ -354,7 +377,7 @@
     <div class="modal-shell" x-cloak x-show="shiftModal" x-transition.opacity>
         <form class="modal-card" @submit.prevent="saveShift">
             <div class="panel-head">
-                <h5>Tambah shift kerja</h5><button type="button" class="modal-close" aria-label="Tutup" @click="shiftModal=false"><i class="fa-solid fa-xmark"></i></button>
+                <h5 x-text="editingShift ? 'Edit shift kerja' : 'Tambah shift kerja'"></h5><button type="button" class="modal-close" aria-label="Tutup" @click="shiftModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
                 <div class="col-12"><label>Nama shift</label><input class="form-control" x-model="shiftForm.name"
@@ -371,7 +394,7 @@
     <div class="modal-shell" x-cloak x-show="deviceModal" x-transition.opacity>
         <form class="modal-card" @submit.prevent="saveDevice">
             <div class="panel-head">
-                <h5>Daftarkan perangkat</h5><button type="button" class="modal-close" aria-label="Tutup" @click="deviceModal=false"><i class="fa-solid fa-xmark"></i></button>
+                <h5 x-text="editingDevice ? 'Edit perangkat' : 'Daftarkan perangkat'"></h5><button type="button" class="modal-close" aria-label="Tutup" @click="deviceModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
                 <div class="col-sm-6"><label>Nama perangkat</label><input class="form-control" x-model="deviceForm.name"

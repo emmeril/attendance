@@ -223,6 +223,11 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
 .table tbody tr { transition: background .16s ease; }
 .table tbody tr:hover { background: #f5f7f2; }
 .table strong { color: #18322e; font-weight: 750; }
+.table-actions { white-space: nowrap; }
+.icon-action { width: 31px; height: 31px; display: inline-grid; place-items: center; margin-right: .25rem; color: var(--teal-dark); background: #edf5f0; border: 1px solid #cfe0d5; border-radius: 8px; font-size: .72rem; }
+.icon-action:hover { color: #fff; background: var(--teal); border-color: var(--teal); }
+.icon-action.danger { color: #a5433e; background: #fbefed; border-color: #efd2ce; }
+.icon-action.danger:hover { color: #fff; background: #b04c47; border-color: #b04c47; }
 
 .data-toolbar {
   display: grid;
