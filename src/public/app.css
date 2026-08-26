@@ -228,6 +228,10 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
 .icon-action:hover { color: #fff; background: var(--teal); border-color: var(--teal); }
 .icon-action.danger { color: #a5433e; background: #fbefed; border-color: #efd2ce; }
 .icon-action.danger:hover { color: #fff; background: #b04c47; border-color: #b04c47; }
+.weekday-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .55rem; }
+.weekday-option { display: flex; align-items: center; gap: .5rem; min-height: 42px; margin: 0; padding: .55rem .65rem; color: var(--ink-soft); background: #f3f6f1; border: 1px solid #d7e1d8; border-radius: 10px; cursor: pointer; font-size: .78rem; font-weight: 650; }
+.weekday-option input { width: 17px; height: 17px; accent-color: var(--teal); }
+.weekday-option:has(input:checked) { color: var(--teal-dark); background: #e1f2e9; border-color: #8ec4ad; }
 
 .data-toolbar {
   display: grid;
@@ -381,6 +385,7 @@ label { color: var(--ink-soft); }
   .metric-card { min-height: 92px; }
   .panel-card { padding: 1rem; border-radius: 17px; }
   .login-card { padding: 2rem 1.35rem; }
+  .weekday-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
