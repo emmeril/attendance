@@ -348,6 +348,18 @@ label { color: var(--ink-soft); }
 .form-section-title { display: flex; align-items: center; gap: .55rem; margin-top: .35rem; padding: .62rem .75rem; color: var(--teal-dark); background: #edf6f0; border: 1px solid #d5e7da; border-radius: 10px; font-size: .73rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .form-section-title i { width: 18px; text-align: center; color: var(--teal); }
 .employee-note { padding: .55rem .7rem; background: #fff9e9; border: 1px solid #f0dfb4; border-radius: 9px; }
+.employee-picker { position: relative; }
+.employee-suggestions { position: absolute; z-index: 5; top: calc(100% + .3rem); right: 0; left: 0; overflow: auto; max-height: 235px; padding: .35rem; background: #fff; border: 1px solid #cbdad0; border-radius: 11px; box-shadow: 0 14px 32px rgba(28, 62, 53, .16); }
+.employee-suggestion { display: grid; width: 100%; gap: .12rem; padding: .6rem .7rem; color: var(--ink); background: transparent; border: 0; border-radius: 8px; text-align: left; }
+.employee-suggestion:hover { background: #edf6f0; }
+.employee-suggestion strong { font-size: .78rem; }
+.employee-suggestion small { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .68rem; }
+.employee-suggestion-empty { padding: .75rem; color: var(--muted); font-size: .75rem; text-align: center; }
+.selected-employee { display: flex; align-items: center; gap: .5rem; margin-top: .45rem; padding: .55rem .7rem; color: #17674f; background: #e8f5ed; border: 1px solid #b9ddc5; border-radius: 9px; font-size: .75rem; font-weight: 700; }
+.selected-employee i:first-child { color: #239267; }
+.selected-employee span { flex: 1; }
+.selected-employee button { display: grid; place-items: center; width: 25px; height: 25px; color: #347263; background: transparent; border: 0; border-radius: 6px; }
+.selected-employee button:hover { color: #fff; background: #338b72; }
 .modal-card label { display: block; margin-bottom: .38rem; color: var(--ink-soft); font-size: .74rem; font-weight: 750; }
 .modal-close {
   width: 34px;

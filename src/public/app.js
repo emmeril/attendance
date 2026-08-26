@@ -12,7 +12,7 @@ function attendanceApp() {
     deviceForm: { serial_number:'', name:'', location:'', model:'', external_id:'', api_url:'', machine_port:4370, api_token:'' },
     shiftForm: { name:'', start_time:'08:00', end_time:'17:00', check_in_start:'07:00', check_in_end:'09:00', check_out_start:'15:00', check_out_end:'18:00', late_tolerance_minutes:10, work_days:'1,2,3,4,5' }, shiftDays: ['1','2','3','4','5'],
     attendanceForm: { id:null, employee_id:'', attendance_date:today, check_in:'', check_out:'', status:'hadir', late_minutes:0, work_minutes:0, notes:'' },
-    leaveForm: { employee_id:'', leave_type_id:'', start_date:today, end_date:today, reason:'' },
+    leaveForm: { employee_id:'', leave_type_id:'', start_date:today, end_date:today, reason:'' }, leaveEmployeeQuery:'',
     payrollPeriodForm: { name:'Payroll '+today.slice(0,7), start_date:today.slice(0,8)+'01', end_date:today },
     statCards: [
       { key: 'employees', label: 'Karyawan aktif', icon: 'fa-solid fa-users', color: 'blue' },
@@ -22,6 +22,8 @@ function attendanceApp() {
       { key: 'devices', label: 'Perangkat', icon: 'fa-solid fa-fingerprint', color: 'violet' }
     ],
     uniqueValues(items, key) { return [...new Set(items.map(item=>String(item[key]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id')); },
+    leaveEmployeeOptions() { const query=String(this.leaveEmployeeQuery||'').trim().toLowerCase(); return this.employees.filter(employee=>!query || `${employee.nik||''} ${employee.name||''}`.toLowerCase().includes(query)).slice(0,8); },
+    chooseLeaveEmployee(employee) { this.leaveForm.employee_id=employee.id; this.leaveEmployeeQuery=`${employee.nik || ''} - ${employee.name}`; },
     filteredData(type, items) {
       const query=String(this.queries[type]||'').trim().toLowerCase();
       const filter=String(this.filters[type]||'');
@@ -62,7 +64,7 @@ function attendanceApp() {
     async loadShifts() { try { this.shifts=await this.request('/api/shifts'); } catch(e) { this.notify(e.message); } },
     async loadLeaveTypes() { try { this.leaveTypes=await this.request('/api/leave-types'); } catch(e) { this.notify(e.message); } },
     async loadLeaves() { try { this.leaves=await this.request('/api/leaves'); } catch(e) { this.notify(e.message); } },
-    async submitLeave() { try { await this.request('/api/leaves',{method:'POST',body:JSON.stringify(this.leaveForm)}); this.leaveModal=false; this.leaveForm={employee_id:'',leave_type_id:'',start_date:today,end_date:today,reason:''}; await this.loadLeaves(); this.notify('Pengajuan izin disimpan.'); } catch(e) { this.notify(e.message); } },
+    async submitLeave() { try { if(!this.leaveForm.employee_id) throw new Error('Pilih karyawan dari hasil pencarian.'); await this.request('/api/leaves',{method:'POST',body:JSON.stringify(this.leaveForm)}); this.leaveModal=false; this.leaveForm={employee_id:'',leave_type_id:'',start_date:today,end_date:today,reason:''}; this.leaveEmployeeQuery=''; await this.loadLeaves(); this.notify('Pengajuan izin disimpan.'); } catch(e) { this.notify(e.message); } },
     async setLeaveStatus(row,status) { try { await this.request(`/api/leaves/${row.id}/status`,{method:'PUT',body:JSON.stringify({status})}); await this.loadLeaves(); this.notify(status==='approved'?'Izin disetujui.':'Izin ditolak.'); } catch(e) { this.notify(e.message); } },
     async loadPayroll() { try { [this.payrollPeriods,this.payrollSettings]=await Promise.all([this.request('/api/payroll/periods'),this.request(`/api/payroll/settings?year=${today.slice(0,4)}`)]); if(this.selectedPayrollPeriod) await this.loadPayrollRecords(); } catch(e) { this.notify(e.message); } },
     async loadPayrollRecords() { if(!this.selectedPayrollPeriod) { this.payrollRecords=[]; return; } try { this.payrollRecords=await this.request(`/api/payroll/periods/${this.selectedPayrollPeriod}/records`); } catch(e) { this.notify(e.message); } },
