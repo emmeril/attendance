@@ -12,10 +12,12 @@ const seed = require('./seed');
 const { ingestMany } = require('./services/attendance-service');
 const solution = require('./services/solution-cloud');
 const { encrypt } = require('./services/secrets');
+const ejs = require('ejs');
 
 seed();
 const app = express();
-app.set('view engine', 'ejs');
+app.engine('html', ejs.renderFile);
+app.set('view engine', 'html');
 app.set('views', path.join(config.rootDir, 'src', 'views'));
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
