@@ -51,12 +51,14 @@
                                     class="nav-icon fa-solid fa-clock"></i>
                                 <p>Jam Kerja</p>
                             </a></li>
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='devices'}" @click.prevent="section='devices'"><i
+                       
+                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='leaves'}" @click.prevent="section='leaves'"><i class="nav-icon fa-solid fa-file-signature"></i><p>Izin</p></a></li>
+                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='payroll'}" @click.prevent="section='payroll'" @click.once="loadPayroll"><i class="nav-icon fa-solid fa-money-check-dollar"></i><p>Payroll</p></a></li>
+                     <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='devices'}" @click.prevent="section='devices'"><i
                                     class="nav-icon fa-solid fa-fingerprint"></i>
                                 <p>Perangkat Finger</p>
                             </a></li>
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='leaves'}" @click.prevent="section='leaves'"><i class="nav-icon fa-solid fa-file-signature"></i><p>Izin</p></a></li>
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='payroll'}" @click.prevent="section='payroll'" @click.once="loadPayroll"><i class="nav-icon fa-solid fa-money-check-dollar"></i><p>Payroll</p></a></li>
+                    
                     </ul>
                 </nav>
             </div>
