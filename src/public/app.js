@@ -2,7 +2,7 @@ function attendanceApp() {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
   const dateOffset = (days) => { const date = new Date(`${today}T00:00:00+07:00`); date.setDate(date.getDate() - days); return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(date); };
   return {
-    section: 'overview', date: today, from: dateOffset(29), to: today, attendanceRange: '30',
+    section: localStorage.getItem('hadirku.active-section') || 'overview', date: today, from: dateOffset(29), to: today, attendanceRange: '30',
     stats: {}, recent: [], attendance: [], employees: [], devices: [], shifts: [], leaves: [], leaveTypes: [], payrollPeriods: [], payrollRecords: [], payrollSettings: {}, selectedPayrollPeriod:'', toast: '', attendanceLoading: false, employeeModal: false, deviceModal: false, shiftModal: false, attendanceModal: false, leaveModal: false, payrollPeriodModal: false, editingEmployee: null, editingShift: null, editingDevice: null, editingAttendance: null,
     queries: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'', payroll:'' },
     filters: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'', payroll:'' },
@@ -50,7 +50,7 @@ function attendanceApp() {
     changePage(type, items, direction) { this.pages[type]=Math.min(this.pageCount(type,items),Math.max(1,this.pages[type]+direction)); },
     rangeText(type, items) { const total=this.filteredData(type,items).length; if(!total) return 'Tidak ada data'; const start=(this.pages[type]-1)*this.perPage[type]+1; const end=Math.min(start+this.perPage[type]-1,total); return `${start}-${end} dari ${total} data`; },
     async request(url, options = {}) { const response = await fetch(url, { headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Permintaan gagal'); return data; },
-    async init() { await Promise.all([this.loadDashboard(), this.loadAttendance(), this.loadEmployees(), this.loadDevices(), this.loadShifts(), this.loadLeaves(), this.loadLeaveTypes(), this.loadPayroll()]); },
+    async init() { this.$watch('section', value => localStorage.setItem('hadirku.active-section', value)); localStorage.setItem('hadirku.active-section', this.section); await Promise.all([this.loadDashboard(), this.loadAttendance(), this.loadEmployees(), this.loadDevices(), this.loadShifts(), this.loadLeaves(), this.loadLeaveTypes(), this.loadPayroll()]); },
     async loadDashboard() { try { const data = await this.request(`/api/dashboard?date=${this.date}`); this.stats=data.stats; this.recent=data.recent; } catch(e) { this.notify(e.message); } },
     async loadAttendance() {
       if(!this.from || !this.to) return;
