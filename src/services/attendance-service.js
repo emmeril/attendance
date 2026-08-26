@@ -110,7 +110,14 @@ function ingestOne(payload, source = 'device') {
     JSON.stringify(payload)
   );
 
-  if (result.changes && employee) rebuildDaily(employee.id, scanned.format('YYYY-MM-DD'));
+  if (!result.changes && (employee || device)) {
+    db.prepare(`
+      UPDATE attendance_logs
+      SET employee_id = COALESCE(employee_id, ?), device_id = COALESCE(device_id, ?)
+      WHERE device_serial = ? AND employee_code = ? AND scanned_at = ?
+    `).run(employee?.id || null, device?.id || null, serial, code, scannedAt);
+  }
+  if (employee) rebuildDaily(employee.id, scanned.format('YYYY-MM-DD'));
   return { inserted: Boolean(result.changes), matched: Boolean(employee), employeeCode: code, scannedAt };
 }
 

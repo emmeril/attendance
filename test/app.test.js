@@ -74,3 +74,11 @@ test('direct machine host is normalized', () => {
   assert.equal(hostFromDevice({ api_url: '192.168.2.201' }), '192.168.2.201');
   assert.equal(hostFromDevice({ api_url: 'http://192.168.2.201' }), '192.168.2.201');
 });
+
+test('machine users map to employee records', () => {
+  const { syncUsers } = require('../src/services/direct-machine');
+  const result = syncUsers([{ userId: 'TEST-USER-1', name: 'Mesin Test' }]);
+  assert.equal(result.inserted, 1);
+  const employee = require('../src/db').prepare('SELECT name, device_user_id FROM employees WHERE device_user_id = ?').get('TEST-USER-1');
+  assert.deepEqual(employee, { name: 'Mesin Test', device_user_id: 'TEST-USER-1' });
+});
