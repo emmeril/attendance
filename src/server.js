@@ -99,7 +99,7 @@ app.get('/api/dashboard', isAuthenticated, (req, res) => {
     terlambat: db.prepare("SELECT COUNT(*) AS count FROM daily_attendance WHERE attendance_date = ? AND status = 'terlambat'").get(date).count,
     belumScan: db.prepare(`SELECT COUNT(*) AS count FROM employees WHERE is_active = 1 AND id NOT IN (SELECT employee_id FROM daily_attendance WHERE attendance_date = ? AND employee_id IS NOT NULL)`).get(date).count
   };
-  const recent = db.prepare(`SELECT a.*, e.name employee_name, d.name device_name FROM attendance_logs a LEFT JOIN employees e ON e.id=a.employee_id LEFT JOIN devices d ON d.id=a.device_id ORDER BY a.scanned_at DESC LIMIT 8`).all();
+  const recent = db.prepare(`SELECT a.*, e.name employee_name, d.name device_name FROM attendance_logs a LEFT JOIN employees e ON e.id=a.employee_id LEFT JOIN devices d ON d.id=a.device_id ORDER BY a.scanned_at DESC LIMIT 200`).all();
   res.json({ date, stats, recent });
 });
 

@@ -95,6 +95,11 @@
                                                     </div><button class="btn btn-sm btn-light" @click="loadDashboard"><i
                                                             class="fa-solid fa-rotate"></i></button>
                                                 </div>
+                                                <div class="data-toolbar">
+                                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari aktivitas..." x-model="queries.recent" @input="resetPage('recent')"></label>
+                                                    <select class="form-select toolbar-select" x-model="filters.recent" @change="resetPage('recent')"><option value="">Semua perangkat</option><template x-for="value in uniqueValues(recent,'device_name')" :key="value"><option :value="value" x-text="value"></option></template></select>
+                                                    <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.recent" @change="resetPage('recent')"><option :value="5">5</option><option :value="10">10</option><option :value="25">25</option></select></label>
+                                                </div>
                                                 <div class="table-responsive">
                                                     <table class="table align-middle">
                                                         <thead>
@@ -105,7 +110,7 @@
                                                                 <th>Status</th>
                                                             </tr>
                                                         </thead>
-                                                        <tbody><template x-for="row in recent" :key="row.id">
+                                                        <tbody><template x-for="row in pagedData('recent',recent)" :key="row.id">
                                                                 <tr>
                                                                     <td><strong
                                                                             x-text="row.employee_name || row.employee_code"></strong><small
@@ -120,13 +125,14 @@
                                                                     </td>
                                                                 </tr>
                                                             </template>
-                                                            <tr x-show="!recent.length">
+                                                            <tr x-show="!filteredData('recent',recent).length">
                                                                 <td colspan="4" class="text-center text-muted py-5">
                                                                     Belum ada aktivitas scan.</td>
                                                             </tr>
                                                         </tbody>
                                                     </table>
                                                 </div>
+                                                <div class="data-footer"><span x-text="rangeText('recent',recent)"></span><div class="pager"><button @click="changePage('recent',recent,-1)" :disabled="pages.recent<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.recent"></strong> / <span x-text="pageCount('recent',recent)"></span></span><button @click="changePage('recent',recent,1)" :disabled="pages.recent>=pageCount('recent',recent)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
                                             </div>
                                         </div>
                                         <div class="col-lg-4">
@@ -154,6 +160,11 @@
                                             x-model="from"><input type="date" class="form-control" x-model="to"><button
                                             class="btn btn-primary" @click="loadAttendance">Tampilkan</button></div>
                                 </div>
+                                <div class="data-toolbar">
+                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, kode, tanggal..." x-model="queries.attendance" @input="resetPage('attendance')"></label>
+                                    <select class="form-select toolbar-select" x-model="filters.attendance" @change="resetPage('attendance')"><option value="">Semua status</option><option value="hadir">Hadir</option><option value="terlambat">Terlambat</option></select>
+                                    <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.attendance" @change="resetPage('attendance')"><option :value="10">10</option><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label>
+                                </div>
                                 <div class="table-responsive">
                                     <table class="table align-middle">
                                         <thead>
@@ -167,7 +178,7 @@
                                                 <th>Terlambat</th>
                                             </tr>
                                         </thead>
-                                        <tbody><template x-for="row in attendance" :key="row.id">
+                                        <tbody><template x-for="row in pagedData('attendance',attendance)" :key="row.id">
                                                 <tr>
                                                     <td x-text="row.attendance_date"></td>
                                                     <td><strong x-text="row.name"></strong><small
@@ -181,9 +192,10 @@
                                                             x-text="row.status"></span></td>
                                                     <td x-text="row.late_minutes + ' mnt'"></td>
                                                 </tr>
-                                            </template></tbody>
+                                            </template><tr x-show="!filteredData('attendance',attendance).length"><td colspan="7" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Data absensi tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
+                                <div class="data-footer"><span x-text="rangeText('attendance',attendance)"></span><div class="pager"><button @click="changePage('attendance',attendance,-1)" :disabled="pages.attendance<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.attendance"></strong> / <span x-text="pageCount('attendance',attendance)"></span></span><button @click="changePage('attendance',attendance,1)" :disabled="pages.attendance>=pageCount('attendance',attendance)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
                             </div>
                         </div>
                         <div class="container-fluid" x-show="section==='employees'">
@@ -196,6 +208,11 @@
                                         @click="employeeModal=true; editingEmployee=null"><i class="fa-solid fa-plus"></i>
                                         Tambah karyawan</button>
                                 </div>
+                                <div class="data-toolbar">
+                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, kode, ID mesin..." x-model="queries.employees" @input="resetPage('employees')"></label>
+                                    <select class="form-select toolbar-select" x-model="filters.employees" @change="resetPage('employees')"><option value="">Semua departemen</option><template x-for="value in uniqueValues(employees,'department')" :key="value"><option :value="value" x-text="value"></option></template></select>
+                                    <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.employees" @change="resetPage('employees')"><option :value="10">10</option><option :value="25">25</option><option :value="50">50</option><option :value="100">100</option></select></label>
+                                </div>
                                 <div class="table-responsive">
                                     <table class="table align-middle">
                                         <thead>
@@ -207,7 +224,7 @@
                                                 <th>ID perangkat</th>
                                             </tr>
                                         </thead>
-                                        <tbody><template x-for="row in employees" :key="row.id">
+                                        <tbody><template x-for="row in pagedData('employees',employees)" :key="row.id">
                                                 <tr>
                                                     <td><code x-text="row.employee_code"></code></td>
                                                     <td><strong x-text="row.name"></strong><small
@@ -217,9 +234,10 @@
                                                     <td x-text="row.shift_name || '—'"></td>
                                                     <td x-text="row.device_user_id || '—'"></td>
                                                 </tr>
-                                            </template></tbody>
+                                            </template><tr x-show="!filteredData('employees',employees).length"><td colspan="5" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Karyawan tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
+                                <div class="data-footer"><span x-text="rangeText('employees',employees)"></span><div class="pager"><button @click="changePage('employees',employees,-1)" :disabled="pages.employees<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.employees"></strong> / <span x-text="pageCount('employees',employees)"></span></span><button @click="changePage('employees',employees,1)" :disabled="pages.employees>=pageCount('employees',employees)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
                             </div>
                         </div>
                         <div class="container-fluid" x-show="section==='shifts'">
@@ -230,6 +248,11 @@
                                         <h5>Pengaturan shift</h5>
                                     </div><button class="btn btn-primary" @click="shiftModal=true"><i
                                             class="fa-solid fa-plus"></i> Tambah shift</button>
+                                </div>
+                                <div class="data-toolbar">
+                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama atau jam shift..." x-model="queries.shifts" @input="resetPage('shifts')"></label>
+                                    <select class="form-select toolbar-select" x-model="filters.shifts" @change="resetPage('shifts')"><option value="">Semua waktu</option><option value="pagi">Shift pagi</option><option value="siang">Shift siang/malam</option></select>
+                                    <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.shifts" @change="resetPage('shifts')"><option :value="5">5</option><option :value="10">10</option><option :value="25">25</option></select></label>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table align-middle">
@@ -242,7 +265,7 @@
                                                 <th>Hari kerja</th>
                                             </tr>
                                         </thead>
-                                        <tbody><template x-for="row in shifts" :key="row.id">
+                                        <tbody><template x-for="row in pagedData('shifts',shifts)" :key="row.id">
                                                 <tr>
                                                     <td><strong x-text="row.name"></strong></td>
                                                     <td x-text="row.start_time"></td>
@@ -250,9 +273,10 @@
                                                     <td x-text="row.late_tolerance_minutes + ' menit'"></td>
                                                     <td x-text="workDays(row.work_days)"></td>
                                                 </tr>
-                                            </template></tbody>
+                                            </template><tr x-show="!filteredData('shifts',shifts).length"><td colspan="5" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Shift tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
+                                <div class="data-footer"><span x-text="rangeText('shifts',shifts)"></span><div class="pager"><button @click="changePage('shifts',shifts,-1)" :disabled="pages.shifts<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.shifts"></strong> / <span x-text="pageCount('shifts',shifts)"></span></span><button @click="changePage('shifts',shifts,1)" :disabled="pages.shifts>=pageCount('shifts',shifts)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
                             </div>
                         </div>
                         <div class="container-fluid" x-show="section==='devices'">
@@ -271,7 +295,12 @@
                                     bukan dibuat duplikat.
                                     Mesin yang dikonfigurasi ADMS tetap dapat mengirim otomatis ke endpoint
                                     <code>/iclock</code>.</div>
-                                <div class="row g-3"><template x-for="row in devices" :key="row.id">
+                                <div class="data-toolbar">
+                                    <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, IP, serial..." x-model="queries.devices" @input="resetPage('devices')"></label>
+                                    <select class="form-select toolbar-select" x-model="filters.devices" @change="resetPage('devices')"><option value="">Semua status</option><option value="online">Online</option><option value="offline">Offline</option></select>
+                                    <label class="show-control"><span>Tampilkan</span><select class="form-select" x-model.number="perPage.devices" @change="resetPage('devices')"><option :value="3">3</option><option :value="6">6</option><option :value="12">12</option><option :value="24">24</option></select></label>
+                                </div>
+                                <div class="row g-3"><template x-for="row in pagedData('devices',devices)" :key="row.id">
                                         <div class="col-md-6 col-xl-4">
                                             <div class="device-card">
                                                 <div class="d-flex justify-content-between">
@@ -291,7 +320,8 @@
                                                         x-show="row.api_url">Ambil data</button></div>
                                             </div>
                                         </div>
-                                    </template></div>
+                                    </template><div class="col-12" x-show="!filteredData('devices',devices).length"><div class="empty-cards"><i class="fa-regular fa-folder-open"></i><span>Perangkat tidak ditemukan.</span></div></div></div>
+                                <div class="data-footer"><span x-text="rangeText('devices',devices)"></span><div class="pager"><button @click="changePage('devices',devices,-1)" :disabled="pages.devices<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.devices"></strong> / <span x-text="pageCount('devices',devices)"></span></span><button @click="changePage('devices',devices,1)" :disabled="pages.devices>=pageCount('devices',devices)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
                             </div>
                         </div>
                     </div>
