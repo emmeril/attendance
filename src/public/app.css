@@ -260,6 +260,7 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
   border: 1px solid #e0e7df;
   border-radius: 14px;
 }
+.data-toolbar.payroll-toolbar { display: flex; flex-wrap: nowrap; align-items: center; }
 .search-field { position: relative; display: block; margin: 0; }
 .search-field i { position: absolute; z-index: 1; top: 50%; left: .85rem; color: #7d8e89; font-size: .82rem; transform: translateY(-50%); }
 .search-field input {
@@ -434,7 +435,7 @@ label { color: var(--ink-soft); }
   .panel-head > .btn { width: 100%; }
   .data-toolbar { grid-template-columns: 1fr; }
   .attendance-toolbar { grid-template-columns: 1fr 1fr; }
-  .payroll-toolbar { display: grid; grid-template-columns: 1fr; }
+  .data-toolbar.payroll-toolbar { display: grid; grid-template-columns: 1fr; }
   .payroll-toolbar > .toolbar-select:first-child,
   .payroll-toolbar > .toolbar-select:not(:first-child),
   .payroll-toolbar .search-field { width: 100%; min-width: 0; }
