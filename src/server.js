@@ -12,6 +12,7 @@ const seed = require('./seed');
 const { ingestMany } = require('./services/attendance-service');
 const adms = require('./services/adms');
 const directMachine = require('./services/direct-machine');
+const machineSync = require('./services/machine-sync');
 const { encrypt } = require('./services/secrets');
 const ejs = require('ejs');
 
@@ -144,7 +145,7 @@ app.post('/api/devices/:id/sync', isAuthenticated, async (req, res) => {
   const d = db.prepare('SELECT * FROM devices WHERE id=?').get(req.params.id);
   if (!d) return res.status(404).json({ error: 'Perangkat tidak ditemukan' });
   if (d.api_url) {
-    try { return res.json(await directMachine.pullAttendance(d)); }
+    try { return res.json(await machineSync.syncDevice(d)); }
     catch (error) { return res.status(502).json({ error: `Sinkronisasi gagal: ${error.message}` }); }
   }
   return res.status(400).json({ error: 'Isi IP mesin terlebih dahulu, atau gunakan mode ADMS.' });
@@ -159,5 +160,8 @@ app.post('/api/webhooks/solution', (req, res) => { if(config.solution.webhookSec
 
 app.use((err, req, res, next) => { console.error(err); res.status(500).json({ error: 'Terjadi kesalahan pada server.' }); });
 
-if (require.main === module) app.listen(config.port, () => console.log(`${config.appName} berjalan di ${config.appUrl}`));
+if (require.main === module) app.listen(config.port, () => {
+  console.log(`${config.appName} berjalan di ${config.appUrl}`);
+  machineSync.start();
+});
 module.exports = app;

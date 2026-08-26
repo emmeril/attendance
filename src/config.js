@@ -18,6 +18,11 @@ module.exports = {
     email: process.env.ADMIN_EMAIL || 'admin@attendance.local',
     password: process.env.ADMIN_PASSWORD || 'admin123'
   },
+  machineSync: {
+    enabled: process.env.MACHINE_AUTO_SYNC !== 'false',
+    intervalMs: Math.max(30, Number(process.env.MACHINE_SYNC_INTERVAL_SECONDS || 300)) * 1000,
+    initialDelayMs: Math.max(1, Number(process.env.MACHINE_SYNC_INITIAL_DELAY_SECONDS || 10)) * 1000
+  },
   solution: {
     baseUrl: (process.env.SOLUTION_BASE_URL || 'https://www.solutioncloud.co.id').replace(/\/$/, ''),
     apiKey: process.env.SOLUTION_API_KEY || '',
