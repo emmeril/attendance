@@ -290,6 +290,7 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
 .form-control:focus,
 .form-select:focus { color: var(--ink); background: #fff; border-color: #3a8d81; box-shadow: 0 0 0 4px rgba(32, 119, 108, .11) !important; }
 label { color: var(--ink-soft); }
+.field-hint { color: var(--muted); font-size: .66rem; font-weight: 600; }
 
 .btn { min-height: 40px; border-radius: 11px; font-weight: 700; }
 .btn-sm { min-height: 34px; border-radius: 9px; font-size: .75rem; }

@@ -382,9 +382,9 @@
             <div class="row g-3">
                 <div class="col-12"><label>Nama jam kerja</label><input class="form-control" x-model="shiftForm.name"
                         required></div>
-                <div class="col-6"><label>Jam masuk</label><input type="time" class="form-control"
+                <div class="col-6"><label>Jam masuk <small class="field-hint">00:00 - 23:59</small></label><input type="time" min="00:00" max="23:59" step="60" class="form-control"
                         x-model="shiftForm.start_time" required></div>
-                <div class="col-6"><label>Jam pulang</label><input type="time" class="form-control"
+                <div class="col-6"><label>Jam pulang <small class="field-hint">00:00 - 23:59</small></label><input type="time" min="00:00" max="23:59" step="60" class="form-control"
                         x-model="shiftForm.end_time" required></div>
                 <div class="col-12"><label>Toleransi terlambat (menit)</label><input type="number" min="0"
                         class="form-control" x-model="shiftForm.late_tolerance_minutes"></div>
