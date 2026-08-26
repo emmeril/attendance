@@ -153,12 +153,12 @@
                             <div class="panel-card">
                                 <div class="panel-head">
                                     <div>
-                                        <p class="eyebrow mb-1">REKAP KEHADIRAN</p>
+                                    <p class="eyebrow mb-1">REKAP KEHADIRAN DARI MESIN</p>
                                         <h5>Data absensi harian</h5>
                                     </div>
                                     <div class="d-flex gap-2"><input type="date" class="form-control"
                                             x-model="from"><input type="date" class="form-control" x-model="to"><button
-                                            class="btn btn-primary" @click="loadAttendance">Tampilkan</button><button class="btn btn-primary" @click="newAttendance"><i class="fa-solid fa-plus"></i> Tambah</button></div>
+                                            class="btn btn-primary" @click="loadAttendance">Tampilkan</button></div>
                                 </div>
                                 <div class="data-toolbar">
                                     <label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari nama, kode, tanggal..." x-model="queries.attendance" @input="resetPage('attendance')"></label>
@@ -336,10 +336,9 @@
     <div class="modal-shell" x-cloak x-show="attendanceModal" x-transition.opacity>
         <form class="modal-card" @submit.prevent="saveAttendance">
             <div class="panel-head">
-                <h5 x-text="editingAttendance ? 'Edit data absensi' : 'Tambah data absensi'"></h5><button type="button" class="modal-close" aria-label="Tutup" @click="attendanceModal=false"><i class="fa-solid fa-xmark"></i></button>
+                <h5>Edit data absensi mesin</h5><button type="button" class="modal-close" aria-label="Tutup" @click="attendanceModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
-                <div class="col-12" x-show="!editingAttendance"><label>Karyawan</label><select class="form-select" x-model="attendanceForm.employee_id" :required="!editingAttendance"><option value="">Pilih karyawan</option><template x-for="employee in employees" :key="employee.id"><option :value="employee.id" x-text="employee.employee_code + ' - ' + employee.name"></option></template></select></div>
                 <div class="col-sm-6"><label>Tanggal</label><input type="date" class="form-control" x-model="attendanceForm.attendance_date" required></div>
                 <div class="col-sm-6"><label>Status</label><select class="form-select" x-model="attendanceForm.status"><option value="hadir">Hadir</option><option value="terlambat">Terlambat</option><option value="izin">Izin</option><option value="sakit">Sakit</option><option value="alpha">Alpha</option></select></div>
                 <div class="col-sm-6"><label>Jam masuk</label><input type="datetime-local" class="form-control" x-model="attendanceForm.check_in"></div>
@@ -347,7 +346,7 @@
                 <div class="col-sm-6"><label>Terlambat (menit)</label><input type="number" min="0" class="form-control" x-model="attendanceForm.late_minutes"></div>
                 <div class="col-sm-6"><label>Durasi kerja (menit)</label><input type="number" min="0" class="form-control" x-model="attendanceForm.work_minutes"></div>
                 <div class="col-12"><label>Catatan</label><textarea class="form-control" rows="3" x-model="attendanceForm.notes"></textarea></div>
-            </div><button class="btn btn-primary w-100 mt-4" x-text="editingAttendance ? 'Simpan perubahan' : 'Tambah absensi'"></button>
+            </div><button class="btn btn-primary w-100 mt-4">Simpan perubahan</button>
         </form>
     </div>
     <div class="modal-shell" x-cloak x-show="employeeModal" x-transition.opacity>
