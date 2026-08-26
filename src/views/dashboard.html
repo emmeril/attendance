@@ -214,6 +214,9 @@
                                                 <th>Nama</th>
                                                 <th>Departemen</th>
                                                 <th>Jam Kerja</th>
+                                                <th>Gaji Pokok</th>
+                                                <th>Pajak</th>
+                                                <th>BPJS</th>
                                                 <th>Nomor Mesin</th>
                                                 <th>Aksi</th>
                                             </tr>
@@ -226,10 +229,13 @@
                                                             x-text="row.position || ''"></small></td>
                                                     <td x-text="row.department || '—'"></td>
                                                     <td x-text="row.shift_name || '—'"></td>
+                                                    <td><strong class="salary-value" x-text="formatMoney(row.base_salary)"></strong></td>
+                                                    <td><span class="tax-profile"><strong x-text="row.tax_status || 'TK/0'"></strong><small x-text="'TER ' + Number(row.pph21_rate || 0) + '%'"></small></span></td>
+                                                    <td><span class="bpjs-profile"><small :class="row.bpjs_health_number ? 'is-complete' : ''"><i class="fa-solid fa-heart-pulse"></i> Kesehatan</small><small :class="row.bpjs_employment_number ? 'is-complete' : ''"><i class="fa-solid fa-helmet-safety"></i> TK</small></span></td>
                                                     <td><small class="machine-id-list" x-text="row.machine_user_ids || row.device_user_id || '—'"></small></td>
                                                     <td class="table-actions"><button class="icon-action" title="Edit" @click="editEmployee(row)"><i class="fa-solid fa-pen"></i></button><button class="icon-action danger" title="Hapus" @click="deleteEmployee(row)"><i class="fa-solid fa-trash"></i></button></td>
                                                 </tr>
-                                            </template><tr x-show="!filteredData('employees',employees).length"><td colspan="6" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Karyawan tidak ditemukan.</span></td></tr></tbody>
+                                            </template><tr x-show="!filteredData('employees',employees).length"><td colspan="9" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Karyawan tidak ditemukan.</span></td></tr></tbody>
                                     </table>
                                 </div>
                                 <div class="data-footer"><span x-text="rangeText('employees',employees)"></span><div class="pager"><button @click="changePage('employees',employees,-1)" :disabled="pages.employees<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.employees"></strong> / <span x-text="pageCount('employees',employees)"></span></span><button @click="changePage('employees',employees,1)" :disabled="pages.employees>=pageCount('employees',employees)"><i class="fa-solid fa-chevron-right"></i></button></div></div>

@@ -224,6 +224,13 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
 .table tbody tr:hover { background: #f5f7f2; }
 .table strong { color: #18322e; font-weight: 750; }
 .machine-id-list { display: block; max-width: 320px; color: var(--ink-soft); line-height: 1.45; white-space: normal; }
+.salary-value { color: var(--teal-dark) !important; white-space: nowrap; }
+.tax-profile { display: grid; gap: .12rem; }
+.tax-profile small { color: var(--muted); font-size: .65rem; }
+.bpjs-profile { display: grid; gap: .2rem; min-width: 92px; }
+.bpjs-profile small { color: #9aa6a2; white-space: nowrap; }
+.bpjs-profile small.is-complete { color: #197151; }
+.bpjs-profile i { width: 14px; }
 .machine-map-field { display: grid; gap: .35rem; padding: .7rem; background: #f3f6f1; border: 1px solid #dce6dd; border-radius: 11px; }
 .machine-map-field > span { color: var(--ink-soft); font-size: .72rem; font-weight: 700; }
 .payroll-settings { display: grid; grid-template-columns: repeat(5,minmax(120px,1fr)) auto; align-items: end; gap: .65rem; margin-bottom: 1rem; padding: .8rem; background: #f3f6f1; border: 1px solid #e0e7df; border-radius: 14px; }
