@@ -525,6 +525,28 @@ body { overflow-x: hidden; }
 .panel-head .btn { white-space: nowrap; }
 .mobile-sidebar-backdrop { display: none; }
 
+/* Tablet and mobile "desktop site" widths still need a compact toolbar. */
+@media (max-width: 1199.98px) {
+  .attendance-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .attendance-toolbar .date-filter,
+  .attendance-toolbar .period-filter,
+  .attendance-toolbar .toolbar-select { width: 100%; max-width: none; }
+  .attendance-toolbar .search-field { grid-column: 1 / -1; }
+  .attendance-toolbar .show-control { grid-column: 1 / -1; justify-content: flex-end; }
+
+  .data-toolbar:not(.attendance-toolbar):not(.payroll-toolbar) { grid-template-columns: minmax(0, 1fr) minmax(150px, .7fr); }
+  .data-toolbar:not(.attendance-toolbar):not(.payroll-toolbar) .show-control { grid-column: 1 / -1; justify-content: flex-end; }
+
+  .data-toolbar.payroll-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .payroll-toolbar > .toolbar-select:first-child { grid-column: 1; width: 100%; }
+  .payroll-toolbar > .btn { grid-column: 2; width: 100%; }
+  .payroll-toolbar .search-field { grid-column: 1 / -1; width: 100%; min-width: 0; }
+  .payroll-toolbar > .toolbar-select:not(:first-child) { grid-column: 1; width: 100%; }
+  .payroll-toolbar .show-control { grid-column: 2; justify-content: flex-end; }
+  .payroll-settings { grid-template-columns: repeat(3, minmax(120px, 1fr)); }
+  .payroll-settings > .btn { grid-column: 1 / -1; }
+}
+
 @media (max-width: 991.98px) {
   .app-sidebar { width: 280px !important; }
   .sidebar-collapse-trigger { display: none; }
@@ -571,6 +593,14 @@ body { overflow-x: hidden; }
   .panel-head .btn { width: 100%; }
   .data-toolbar { padding: .6rem; gap: .55rem; }
   .data-toolbar .show-control { min-height: 41px; }
+  .data-toolbar.payroll-toolbar { grid-template-columns: 1fr; }
+  .payroll-toolbar > .toolbar-select:first-child,
+  .payroll-toolbar > .btn,
+  .payroll-toolbar .search-field,
+  .payroll-toolbar > .toolbar-select:not(:first-child),
+  .payroll-toolbar .show-control { grid-column: 1; width: 100%; }
+  .payroll-toolbar .show-control { justify-content: space-between; }
+  .payroll-settings { grid-template-columns: 1fr 1fr; }
   .metric-card { padding: .85rem; border-radius: 15px; }
   .metric-icon { width: 40px; height: 40px; flex-basis: 40px; border-radius: 12px; font-size: 1rem; }
   .metric-value { font-size: 1.35rem; }
