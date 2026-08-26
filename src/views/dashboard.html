@@ -8,7 +8,7 @@
         <%= appName %>
     </title>
     <link rel="stylesheet" href="/vendor/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/vendor/bootstrap-icons/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/vendor/adminlte/css/adminlte.css">
     <link rel="stylesheet" href="/assets/app.css">
 </head>
@@ -17,10 +17,10 @@
     <div class="app-wrapper">
         <nav class="app-header navbar navbar-expand">
             <div class="container-fluid"><button class="menu-trigger" data-lte-toggle="sidebar"
-                    aria-label="Buka menu"><i class="bi bi-list"></i></button><span class="navbar-brand"><span
+                    aria-label="Buka menu"><i class="fa-solid fa-bars"></i></button><span class="navbar-brand"><span
                         class="brand-dot"></span><span><%= appName %></span></span>
-                <div class="ms-auto d-flex align-items-center gap-3"><span class="live-pill"><i
-                            class="bi bi-circle-fill"></i> Live monitor</span><span class="text-muted small">
+                        <div class="ms-auto d-flex align-items-center gap-3"><span class="live-pill"><i
+                            class="fa-solid fa-circle"></i> Live monitor</span><span class="text-muted small">
                         <%= user.name %>
                     </span>
                     <form method="post" action="/logout"><button
@@ -36,23 +36,23 @@
                 <nav>
                     <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
                         <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='overview'}" @click.prevent="section='overview'"><i
-                                    class="nav-icon bi bi-grid-1x2"></i>
+                                    class="nav-icon fa-solid fa-chart-pie"></i>
                                 <p>Ringkasan</p>
                             </a></li>
                         <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='attendance'}" @click.prevent="section='attendance'"><i
-                                    class="nav-icon bi bi-calendar2-check"></i>
+                                    class="nav-icon fa-solid fa-calendar-check"></i>
                                 <p>Data Absensi</p>
                             </a></li>
                         <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='employees'}" @click.prevent="section='employees'"><i
-                                    class="nav-icon bi bi-people"></i>
+                                    class="nav-icon fa-solid fa-users"></i>
                                 <p>Karyawan</p>
                             </a></li>
                         <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='shifts'}" @click.prevent="section='shifts'"><i
-                                    class="nav-icon bi bi-clock-history"></i>
+                                    class="nav-icon fa-solid fa-clock"></i>
                                 <p>Shift Kerja</p>
                             </a></li>
                         <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='devices'}" @click.prevent="section='devices'"><i
-                                    class="nav-icon bi bi-fingerprint"></i>
+                                    class="nav-icon fa-solid fa-fingerprint"></i>
                                 <p>Perangkat Finger</p>
                             </a></li>
                     </ul>
@@ -93,7 +93,7 @@
                                                         <p class="eyebrow mb-1">STREAM TERBARU</p>
                                                         <h5>Aktivitas scan</h5>
                                                     </div><button class="btn btn-sm btn-light" @click="loadDashboard"><i
-                                                            class="bi bi-arrow-clockwise"></i></button>
+                                                            class="fa-solid fa-rotate"></i></button>
                                                 </div>
                                                 <div class="table-responsive">
                                                     <table class="table align-middle">
@@ -193,7 +193,7 @@
                                         <p class="eyebrow mb-1">PEOPLE DIRECTORY</p>
                                         <h5>Daftar karyawan</h5>
                                     </div><button class="btn btn-primary"
-                                        @click="employeeModal=true; editingEmployee=null"><i class="bi bi-plus-lg"></i>
+                                        @click="employeeModal=true; editingEmployee=null"><i class="fa-solid fa-plus"></i>
                                         Tambah karyawan</button>
                                 </div>
                                 <div class="table-responsive">
@@ -229,7 +229,7 @@
                                         <p class="eyebrow mb-1">WORK PATTERN</p>
                                         <h5>Pengaturan shift</h5>
                                     </div><button class="btn btn-primary" @click="shiftModal=true"><i
-                                            class="bi bi-plus-lg"></i> Tambah shift</button>
+                                            class="fa-solid fa-plus"></i> Tambah shift</button>
                                 </div>
                                 <div class="table-responsive">
                                     <table class="table align-middle">
@@ -262,7 +262,7 @@
                                         <p class="eyebrow mb-1">FINGERPRINT NETWORK</p>
                                         <h5>Perangkat Solution Finger</h5>
                                     </div><button class="btn btn-primary" @click="deviceModal=true"><i
-                                            class="bi bi-plus-lg"></i> Daftar perangkat</button>
+                                            class="fa-solid fa-plus"></i> Daftar perangkat</button>
                                 </div>
                                 <div class="alert alert-info small"><strong>Koneksi mesin:</strong> IP mesin sudah
                                     diisi saat pendaftaran. Tombol <em>Tes koneksi</em> memakai protokol langsung
@@ -275,7 +275,7 @@
                                         <div class="col-md-6 col-xl-4">
                                             <div class="device-card">
                                                 <div class="d-flex justify-content-between">
-                                                    <div class="device-glyph"><i class="bi bi-fingerprint"></i></div>
+                                                    <div class="device-glyph"><i class="fa-solid fa-fingerprint"></i></div>
                                                     <span class="badge rounded-pill"
                                                         :class="row.status==='online'?'text-bg-success':'text-bg-secondary'"
                                                         x-text="row.status"></span>

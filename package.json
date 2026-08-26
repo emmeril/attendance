@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "Manajemen absensi multi-device Solution Finger dengan Express, AdminLTE, dan Alpine.js",
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.3.1",
     "@popperjs/core": "^2.11.8",
     "admin-lte": "^4.8.5",
     "alpinejs": "^3.16.2",
@@ -20,7 +21,6 @@
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^13.0.3",
     "bootstrap": "^5.3.8",
-    "bootstrap-icons": "^1.13.1",
     "compression": "^1.8.1",
     "dayjs": "^1.11.23",
     "dotenv": "^17.4.2",

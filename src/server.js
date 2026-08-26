@@ -32,7 +32,7 @@ app.use(session({
 }));
 app.use('/vendor/adminlte', express.static(path.join(config.rootDir, 'node_modules', 'admin-lte', 'dist')));
 app.use('/vendor/bootstrap', express.static(path.join(config.rootDir, 'node_modules', 'bootstrap', 'dist')));
-app.use('/vendor/bootstrap-icons', express.static(path.join(config.rootDir, 'node_modules', 'bootstrap-icons', 'font')));
+app.use('/vendor/fontawesome', express.static(path.join(config.rootDir, 'node_modules', '@fortawesome', 'fontawesome-free')));
 app.use('/vendor/alpinejs', express.static(path.join(config.rootDir, 'node_modules', 'alpinejs', 'dist')));
 app.use('/assets', express.static(path.join(config.rootDir, 'src', 'public')));
 

@@ -7,11 +7,11 @@ function attendanceApp() {
     deviceForm: { serial_number:'', name:'', location:'', model:'', external_id:'', api_url:'', machine_port:4370, api_token:'' },
     shiftForm: { name:'', start_time:'08:00', end_time:'17:00', late_tolerance_minutes:10, work_days:'1,2,3,4,5' },
     statCards: [
-      { key: 'employees', label: 'Karyawan aktif', icon: 'bi bi-people', color: 'blue' },
-      { key: 'hadir', label: 'Hadir hari ini', icon: 'bi bi-check2-circle', color: 'green' },
-      { key: 'terlambat', label: 'Terlambat', icon: 'bi bi-hourglass-split', color: 'orange' },
-      { key: 'belumScan', label: 'Belum scan', icon: 'bi bi-person-x', color: 'red' },
-      { key: 'devices', label: 'Perangkat', icon: 'bi bi-fingerprint', color: 'violet' }
+      { key: 'employees', label: 'Karyawan aktif', icon: 'fa-solid fa-users', color: 'blue' },
+      { key: 'hadir', label: 'Hadir hari ini', icon: 'fa-solid fa-circle-check', color: 'green' },
+      { key: 'terlambat', label: 'Terlambat', icon: 'fa-solid fa-hourglass-half', color: 'orange' },
+      { key: 'belumScan', label: 'Belum scan', icon: 'fa-solid fa-user-xmark', color: 'red' },
+      { key: 'devices', label: 'Perangkat', icon: 'fa-solid fa-fingerprint', color: 'violet' }
     ],
     async request(url, options = {}) { const response = await fetch(url, { headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Permintaan gagal'); return data; },
     async init() { await Promise.all([this.loadDashboard(), this.loadAttendance(), this.loadEmployees(), this.loadDevices(), this.loadShifts()]); },
