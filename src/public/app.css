@@ -264,7 +264,22 @@ label { color: var(--ink-soft); }
 .modal-card { width: min(650px, 100%); max-height: calc(100vh - 2rem); overflow: auto; padding: 1.6rem; color: var(--ink); background: var(--paper); border: 1px solid rgba(255, 255, 255, .55); border-radius: 22px; box-shadow: 0 30px 90px rgba(0, 0, 0, .3); }
 .modal-card h5 { color: var(--ink); }
 .modal-card label { display: block; margin-bottom: .38rem; color: var(--ink-soft); font-size: .74rem; font-weight: 750; }
-.btn-close { opacity: .7; }
+.modal-close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  color: #52635e;
+  background: #edf2ed;
+  border: 1px solid #d5dfd7;
+  border-radius: 10px;
+  font-size: 1rem;
+  line-height: 1;
+  transition: color .18s ease, background .18s ease;
+}
+.modal-close:hover { color: #fff; background: #b04c47; border-color: #b04c47; }
+.modal-close:focus-visible { outline: 3px solid rgba(32, 119, 108, .28); outline-offset: 2px; }
 .toast { color: #fff; background: #173a3a; border: 1px solid rgba(255, 255, 255, .12); border-radius: 12px; box-shadow: var(--shadow); }
 .toast-body { color: #fff; }
 [x-cloak] { display: none !important; }

@@ -300,7 +300,7 @@
     <div class="modal-shell" x-cloak x-show="employeeModal" x-transition.opacity>
         <form class="modal-card" @submit.prevent="saveEmployee">
             <div class="panel-head">
-                <h5>Tambah karyawan</h5><button type="button" class="btn-close" @click="employeeModal=false"></button>
+                <h5>Tambah karyawan</h5><button type="button" class="modal-close" aria-label="Tutup" @click="employeeModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
                 <div class="col-sm-4"><label>Kode karyawan</label><input class="form-control"
@@ -324,7 +324,7 @@
     <div class="modal-shell" x-cloak x-show="shiftModal" x-transition.opacity>
         <form class="modal-card" @submit.prevent="saveShift">
             <div class="panel-head">
-                <h5>Tambah shift kerja</h5><button type="button" class="btn-close" @click="shiftModal=false"></button>
+                <h5>Tambah shift kerja</h5><button type="button" class="modal-close" aria-label="Tutup" @click="shiftModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
                 <div class="col-12"><label>Nama shift</label><input class="form-control" x-model="shiftForm.name"
@@ -341,7 +341,7 @@
     <div class="modal-shell" x-cloak x-show="deviceModal" x-transition.opacity>
         <form class="modal-card" @submit.prevent="saveDevice">
             <div class="panel-head">
-                <h5>Daftarkan perangkat</h5><button type="button" class="btn-close" @click="deviceModal=false"></button>
+                <h5>Daftarkan perangkat</h5><button type="button" class="modal-close" aria-label="Tutup" @click="deviceModal=false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="row g-3">
                 <div class="col-sm-6"><label>Nama perangkat</label><input class="form-control" x-model="deviceForm.name"
