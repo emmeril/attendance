@@ -20,6 +20,12 @@ async function testConnection(device) {
   return withMachine(device, async (zk, host) => ({ ok: true, connected: true, host, port: Number(device.machine_port || 4370), info: await zk.getInfo() }));
 }
 
+function employeeCodeFor(id) {
+  const base = `EMP-${String(id).padStart(6, '0')}`;
+  if (!db.prepare('SELECT 1 FROM employees WHERE employee_code = ? AND id <> ?').get(base, id)) return base;
+  return `${base}-${id}`;
+}
+
 function syncUsers(users, deviceId = null) {
   const upsert = db.transaction((items) => {
     let inserted = 0;
@@ -31,20 +37,22 @@ function syncUsers(users, deviceId = null) {
       const mapped = deviceId ? db.prepare('SELECT employee_id FROM employee_device_ids WHERE device_id = ? AND device_user_id = ?').get(deviceId, deviceUserId) : null;
       const existing = mapped ? db.prepare('SELECT id FROM employees WHERE id = ?').get(mapped.employee_id) : db.prepare(`
         SELECT id FROM employees
-        WHERE device_user_id = ? OR employee_code = ? OR LOWER(TRIM(name)) = LOWER(TRIM(?))
+        WHERE device_user_id = ? OR LOWER(TRIM(name)) = LOWER(TRIM(?))
         LIMIT 1
-      `).get(deviceUserId, deviceUserId, name);
+      `).get(deviceUserId, name);
       if (existing) {
         db.prepare(`UPDATE employees SET name = ?, device_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
           .run(name, deviceUserId, existing.id);
         updated += 1;
       } else {
-        db.prepare(`INSERT INTO employees (employee_code, name, device_user_id) VALUES (?, ?, ?)`)
-          .run(deviceUserId, name, deviceUserId);
+        const created = db.prepare(`INSERT INTO employees (employee_code, name, device_user_id) VALUES (?, ?, ?)`)
+          .run(`AUTO-${deviceId || 0}-${deviceUserId}-${Date.now()}`, name, deviceUserId);
+        db.prepare('UPDATE employees SET employee_code = ? WHERE id = ?')
+          .run(employeeCodeFor(Number(created.lastInsertRowid)), created.lastInsertRowid);
         inserted += 1;
       }
       if (deviceId) {
-        const employeeId = existing?.id || db.prepare('SELECT id FROM employees WHERE employee_code = ?').get(deviceUserId)?.id;
+        const employeeId = existing?.id || db.prepare('SELECT id FROM employees WHERE device_user_id = ? ORDER BY id DESC LIMIT 1').get(deviceUserId)?.id;
         if (employeeId) db.prepare('INSERT OR IGNORE INTO employee_device_ids (employee_id, device_id, device_user_id) VALUES (?, ?, ?)').run(employeeId, deviceId, deviceUserId);
       }
     }

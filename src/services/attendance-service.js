@@ -20,13 +20,24 @@ function resolveEmployee(payload) {
   if (!code) throw new Error('employee_code/pin/user_id wajib tersedia');
   const deviceId = Number(payload.device_id || 0);
 
+  if (deviceId) {
+    const mappedEmployee = db.prepare(`
+      SELECT e.*, s.start_time, s.end_time, s.late_tolerance_minutes
+      FROM employee_device_ids x
+      JOIN employees e ON e.id=x.employee_id
+      LEFT JOIN shifts s ON s.id=e.shift_id
+      WHERE x.device_id=? AND x.device_user_id=?
+      LIMIT 1
+    `).get(deviceId, code);
+    if (mappedEmployee) return { code: mappedEmployee.employee_code, employee: mappedEmployee };
+  }
+
   const employee = db.prepare(`
     SELECT e.*, s.start_time, s.end_time, s.late_tolerance_minutes
     FROM employees e LEFT JOIN shifts s ON s.id = e.shift_id
-    WHERE e.employee_code = ? OR e.device_user_id = ?
-      OR (? > 0 AND EXISTS (SELECT 1 FROM employee_device_ids x WHERE x.employee_id=e.id AND x.device_id=? AND x.device_user_id=?))
+    WHERE ${deviceId ? 'e.device_user_id = ?' : 'e.employee_code = ? OR e.device_user_id = ?'}
     LIMIT 1
-  `).get(code, code, deviceId, deviceId, code);
+  `).get(...(deviceId ? [code] : [code, code]));
 
   return { code: employee?.employee_code || code, employee };
 }
@@ -94,6 +105,19 @@ function ingestOne(payload, source = 'device') {
   const scannedAt = scanned.format('YYYY-MM-DDTHH:mm:ssZ');
   const { serial, device } = resolveDevice(payload);
   const { code, employee } = resolveEmployee({ ...payload, device_id: device?.id || payload.device_id });
+
+  const existingLog = employee ? db.prepare(`
+    SELECT id FROM attendance_logs
+    WHERE scanned_at = ? AND employee_id = ?
+      AND ((device_id IS NOT NULL AND device_id = ?) OR (device_serial IS NOT NULL AND device_serial = ?))
+    LIMIT 1
+  `).get(scannedAt, employee.id, device?.id || null, serial) : null;
+  if (existingLog) {
+    db.prepare(`UPDATE attendance_logs SET employee_code = ?, employee_id = ?, device_id = COALESCE(device_id, ?) WHERE id = ?`)
+      .run(employee.employee_code, employee.id, device?.id || null, existingLog.id);
+    rebuildDaily(employee.id, scanned.format('YYYY-MM-DD'));
+    return { inserted: false, matched: true, employeeCode: employee.employee_code, scannedAt };
+  }
 
   const result = db.prepare(`
     INSERT OR IGNORE INTO attendance_logs

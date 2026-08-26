@@ -128,4 +128,16 @@ try { db.exec('ALTER TABLE devices ADD COLUMN machine_port INTEGER NOT NULL DEFA
   if (!/duplicate column name/i.test(error.message)) throw error;
 }
 
+// Employee Code is an internal company identifier, not the PIN stored on a machine.
+const migrateMachineCodes = db.transaction(() => {
+  const rows = db.prepare(`SELECT id FROM employees WHERE device_user_id IS NOT NULL AND employee_code = device_user_id`).all();
+  const exists = db.prepare('SELECT 1 FROM employees WHERE employee_code = ? AND id <> ?');
+  const update = db.prepare('UPDATE employees SET employee_code = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+  for (const row of rows) {
+    const base = `EMP-${String(row.id).padStart(6, '0')}`;
+    update.run(exists.get(base, row.id) ? `${base}-${row.id}` : base, row.id);
+  }
+});
+migrateMachineCodes();
+
 module.exports = db;
