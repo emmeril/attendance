@@ -151,6 +151,10 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS payroll_settings (
     year INTEGER PRIMARY KEY,
+    payday_day INTEGER NOT NULL DEFAULT 10,
+    period_mode TEXT NOT NULL DEFAULT 'previous_month',
+    cutoff_day INTEGER NOT NULL DEFAULT 25,
+    holiday_adjustment TEXT NOT NULL DEFAULT 'previous_workday',
     bpjs_health_employee_rate REAL NOT NULL DEFAULT 1,
     bpjs_health_wage_cap INTEGER NOT NULL DEFAULT 12000000,
     jht_employee_rate REAL NOT NULL DEFAULT 2,
@@ -164,6 +168,10 @@ db.exec(`
     name TEXT NOT NULL,
     start_date TEXT NOT NULL,
     end_date TEXT NOT NULL,
+    payment_date TEXT,
+    adjusted_payment_date TEXT,
+    period_mode TEXT NOT NULL DEFAULT 'manual',
+    paid_at TEXT,
     status TEXT NOT NULL DEFAULT 'draft',
     created_by INTEGER,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -193,10 +201,35 @@ db.exec(`
     FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS holidays (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    holiday_date TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    is_working_day INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE INDEX IF NOT EXISTS idx_attendance_scanned_at ON attendance_logs(scanned_at);
   CREATE INDEX IF NOT EXISTS idx_attendance_employee ON attendance_logs(employee_id);
   CREATE INDEX IF NOT EXISTS idx_daily_date ON daily_attendance(attendance_date);
 `);
+
+for (const definition of [
+  'payday_day INTEGER NOT NULL DEFAULT 10',
+  "period_mode TEXT NOT NULL DEFAULT 'previous_month'",
+  'cutoff_day INTEGER NOT NULL DEFAULT 25',
+  "holiday_adjustment TEXT NOT NULL DEFAULT 'previous_workday'"
+]) {
+  try { db.exec(`ALTER TABLE payroll_settings ADD COLUMN ${definition}`); } catch (error) {
+    if (!/duplicate column name/i.test(error.message)) throw error;
+  }
+}
+for (const definition of ['payment_date TEXT', 'adjusted_payment_date TEXT', "period_mode TEXT NOT NULL DEFAULT 'manual'", 'paid_at TEXT']) {
+  try { db.exec(`ALTER TABLE payroll_periods ADD COLUMN ${definition}`); } catch (error) {
+    if (!/duplicate column name/i.test(error.message)) throw error;
+  }
+}
 
 // Keep older databases compatible with direct machine connections.
 try { db.exec('ALTER TABLE devices ADD COLUMN machine_port INTEGER NOT NULL DEFAULT 4370'); } catch (error) {

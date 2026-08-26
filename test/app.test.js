@@ -117,3 +117,60 @@ test('leave and payroll draft endpoints are available', async () => {
   assert.equal(records.status, 200);
   assert.ok(records.body.every(row => Number.isInteger(row.scheduled_days) && Number.isInteger(row.attendance_days) && Number.isInteger(row.absence_days)));
 });
+
+test('payroll settings preview payday and holiday adjustment', async () => {
+  const agent = request.agent(app);
+  await agent.post('/login').type('form').send({ email: 'admin@attendance.local', password: 'admin123' });
+
+  const settings = await agent.put('/api/payroll/settings/2026').send({
+    payday_day: 10,
+    period_mode: 'previous_month',
+    cutoff_day: 25,
+    holiday_adjustment: 'previous_workday',
+  });
+  assert.equal(settings.status, 200);
+
+  const holiday = await agent.post('/api/holidays').send({ holiday_date: '2026-09-10', name: 'Libur uji payroll' });
+  assert.equal(holiday.status, 201);
+  const preview = await agent.get('/api/payroll/preview?payment_date=2026-09-10&period_mode=previous_month');
+  assert.equal(preview.status, 200);
+  assert.equal(preview.body.start_date, '2026-08-01');
+  assert.equal(preview.body.end_date, '2026-08-31');
+  assert.equal(preview.body.adjusted_payment_date, '2026-09-09');
+
+  const secondHoliday = await agent.post('/api/holidays').send({ holiday_date: '2026-09-09', name: 'Libur uji payroll 2' });
+  assert.equal(secondHoliday.status, 201);
+  const adjustedAgain = await agent.get('/api/payroll/preview?payment_date=2026-09-10');
+  assert.equal(adjustedAgain.body.adjusted_payment_date, '2026-09-08');
+
+  const holidays = await agent.get('/api/holidays?year=2026');
+  assert.ok(holidays.body.some(row => row.id === holiday.body.id));
+  const edited = await agent.put(`/api/holidays/${holiday.body.id}`).send({ holiday_date: '2026-09-10', name: 'Libur payroll diperbarui', is_working_day: true });
+  assert.equal(edited.status, 200);
+  const removed = await agent.delete(`/api/holidays/${secondHoliday.body.id}`);
+  assert.equal(removed.status, 200);
+  await agent.delete(`/api/holidays/${holiday.body.id}`);
+});
+
+test('holiday is excluded from scheduled payroll days and locked payroll cannot recalculate', async () => {
+  const agent = request.agent(app);
+  await agent.post('/login').type('form').send({ email: 'admin@attendance.local', password: 'admin123' });
+  const employee = require('../src/db').prepare('SELECT id FROM employees LIMIT 1').get();
+  const holiday = await agent.post('/api/holidays').send({ holiday_date: '2026-09-17', name: 'Hari Libur uji' });
+  assert.equal(holiday.status, 201);
+  const period = await agent.post('/api/payroll/periods').send({ name: 'Payroll Libur Uji', payment_date: '2026-10-10', period_mode: 'previous_month' });
+  assert.equal(period.status, 201);
+  const calculated = await agent.post(`/api/payroll/periods/${period.body.id}/calculate`).send({});
+  assert.equal(calculated.status, 200);
+  const records = await agent.get(`/api/payroll/periods/${period.body.id}/records`);
+  const row = records.body.find(item => item.employee_id === employee.id);
+  assert.ok(row);
+  assert.equal(row.scheduled_days, 21);
+  const locked = await agent.put(`/api/payroll/periods/${period.body.id}/status`).send({ status: 'locked' });
+  assert.equal(locked.status, 200);
+  const cannotReturnToDraft = await agent.put(`/api/payroll/periods/${period.body.id}/status`).send({ status: 'draft' });
+  assert.equal(cannotReturnToDraft.status, 409);
+  const recalculated = await agent.post(`/api/payroll/periods/${period.body.id}/calculate`).send({});
+  assert.equal(recalculated.status, 409);
+  await agent.delete(`/api/holidays/${holiday.body.id}`);
+});

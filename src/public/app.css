@@ -238,7 +238,33 @@ code { color: var(--teal-dark); font-family: 'DM Mono', monospace; font-size: .8
 .payroll-toolbar .search-field { flex: 1 1 280px; min-width: 220px; }
 .payroll-toolbar > .toolbar-select:not(:first-child) { flex: 0 0 180px; width: 180px; }
 .payroll-toolbar .show-control { flex: 0 0 auto; }
+.payroll-period-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: center; gap: .75rem; margin: -.25rem 0 1rem; padding: .8rem 1rem; background: linear-gradient(110deg, #eef7f1, #f8fbf5); border: 1px solid #d7e7da; border-radius: 13px; }
+.payroll-period-summary > div:not(.payroll-status-actions) { display: grid; gap: .16rem; min-width: 0; }
+.payroll-period-summary strong { overflow: hidden; color: var(--ink); font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+.summary-label { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .06em; text-transform: uppercase; }
+.payroll-period-summary small { color: #6b7e76; font-size: .63rem; }
+.payroll-status { justify-self: start; font-size: .64rem; text-transform: capitalize; }
+.payroll-status-actions { display: flex; justify-content: flex-end; gap: .45rem; }
 .payroll-settings label { display: grid; gap: .3rem; margin: 0; font-size: .68rem; font-weight: 700; }
+.payroll-holiday-panel { margin-bottom: 1rem; padding: 1rem; background: #f8faf6; border: 1px solid #dfe8df; border-radius: 15px; }
+.payroll-holiday-panel .panel-head { margin-bottom: .75rem; }
+.payroll-holiday-panel h6 { margin: 0; color: var(--ink); font-weight: 800; }
+.payroll-holiday-panel h6 small { color: var(--muted); font-weight: 650; }
+.holiday-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .55rem; }
+.holiday-row { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: .55rem; padding: .7rem; background: #fff; border: 1px solid #dfe7df; border-radius: 11px; }
+.holiday-row > div:first-child { min-width: 0; display: grid; gap: .12rem; }
+.holiday-row strong { overflow: hidden; color: var(--ink); font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
+.holiday-row small { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .62rem; }
+.holiday-empty { min-height: 100px; }
+.payroll-preview { display: flex; align-items: flex-start; gap: .65rem; padding: .75rem; color: #275a50; background: #e8f4ed; border: 1px solid #c9e1d3; border-radius: 11px; font-size: .72rem; }
+.payroll-preview > i { margin-top: .14rem; color: var(--teal); }
+.payroll-preview span { display: grid; gap: .2rem; }
+.payroll-preview small { color: #5b716a; }
+.holiday-working-toggle { display: flex !important; align-items: flex-start; gap: .7rem; margin: 0 !important; padding: .75rem; background: #f1f6f1; border: 1px solid #d9e5da; border-radius: 11px; cursor: pointer; }
+.holiday-working-toggle input { width: 18px; height: 18px; margin-top: .1rem; accent-color: var(--teal); }
+.holiday-working-toggle span { display: grid; gap: .15rem; }
+.holiday-working-toggle strong { color: var(--ink); font-size: .74rem; }
+.holiday-working-toggle small { color: var(--muted); font-size: .65rem; font-weight: 600; }
 .table-actions { white-space: nowrap; }
 .icon-action { width: 31px; height: 31px; display: inline-grid; place-items: center; margin-right: .25rem; color: var(--teal-dark); background: #edf5f0; border: 1px solid #cfe0d5; border-radius: 8px; font-size: .72rem; }
 .icon-action:hover { color: #fff; background: var(--teal); border-color: var(--teal); }
@@ -545,6 +571,8 @@ body { overflow-x: hidden; }
   .payroll-toolbar .show-control { grid-column: 2; justify-content: flex-end; }
   .payroll-settings { grid-template-columns: repeat(3, minmax(120px, 1fr)); }
   .payroll-settings > .btn { grid-column: 1 / -1; }
+  .payroll-period-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .payroll-status-actions { justify-content: flex-start; }
 }
 
 @media (max-width: 991.98px) {
@@ -614,6 +642,9 @@ body { overflow-x: hidden; }
   .payroll-toolbar .show-control { grid-column: 1; width: 100%; }
   .payroll-toolbar .show-control { justify-content: space-between; }
   .payroll-settings { grid-template-columns: 1fr 1fr; }
+  .payroll-period-summary { grid-template-columns: 1fr 1fr; gap: .6rem; }
+  .payroll-period-summary .payroll-status-actions { grid-column: 1 / -1; justify-content: stretch; }
+  .payroll-status-actions .btn { flex: 1 1 auto; }
   .metric-card { padding: .85rem; border-radius: 15px; }
   .metric-icon { width: 40px; height: 40px; flex-basis: 40px; border-radius: 12px; font-size: 1rem; }
   .metric-value { font-size: 1.35rem; }
@@ -628,6 +659,8 @@ body { overflow-x: hidden; }
 
 @media (max-width: 359.98px) {
   .payroll-settings { grid-template-columns: 1fr; }
+  .payroll-period-summary { grid-template-columns: 1fr; }
+  .payroll-period-summary .payroll-status-actions { grid-column: auto; }
 }
 
 @media (min-width: 992px) {
