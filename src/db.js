@@ -122,6 +122,77 @@ db.exec(`
     FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE SET NULL
   );
 
+  CREATE TABLE IF NOT EXISTS leave_types (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    is_paid INTEGER NOT NULL DEFAULT 1,
+    annual_quota_days INTEGER,
+    is_active INTEGER NOT NULL DEFAULT 1
+  );
+
+  CREATE TABLE IF NOT EXISTS leave_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL,
+    leave_type_id INTEGER NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    total_days INTEGER NOT NULL DEFAULT 1,
+    reason TEXT,
+    attachment TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    approval_notes TEXT,
+    approved_by INTEGER,
+    approved_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+    FOREIGN KEY (leave_type_id) REFERENCES leave_types(id),
+    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS payroll_settings (
+    year INTEGER PRIMARY KEY,
+    bpjs_health_employee_rate REAL NOT NULL DEFAULT 1,
+    bpjs_health_wage_cap INTEGER NOT NULL DEFAULT 12000000,
+    jht_employee_rate REAL NOT NULL DEFAULT 2,
+    jp_employee_rate REAL NOT NULL DEFAULT 1,
+    jp_wage_cap INTEGER NOT NULL DEFAULT 10547400,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS payroll_periods (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_by INTEGER,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(start_date, end_date),
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS payroll_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    payroll_period_id INTEGER NOT NULL,
+    employee_id INTEGER NOT NULL,
+    base_salary INTEGER NOT NULL DEFAULT 0,
+    allowances INTEGER NOT NULL DEFAULT 0,
+    overtime_pay INTEGER NOT NULL DEFAULT 0,
+    bonus INTEGER NOT NULL DEFAULT 0,
+    unpaid_leave_deduction INTEGER NOT NULL DEFAULT 0,
+    bpjs_health_employee INTEGER NOT NULL DEFAULT 0,
+    jht_employee INTEGER NOT NULL DEFAULT 0,
+    jp_employee INTEGER NOT NULL DEFAULT 0,
+    pph21 INTEGER NOT NULL DEFAULT 0,
+    other_deductions INTEGER NOT NULL DEFAULT 0,
+    gross_salary INTEGER NOT NULL DEFAULT 0,
+    net_salary INTEGER NOT NULL DEFAULT 0,
+    notes TEXT,
+    UNIQUE(payroll_period_id, employee_id),
+    FOREIGN KEY (payroll_period_id) REFERENCES payroll_periods(id) ON DELETE CASCADE,
+    FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+  );
+
   CREATE INDEX IF NOT EXISTS idx_attendance_scanned_at ON attendance_logs(scanned_at);
   CREATE INDEX IF NOT EXISTS idx_attendance_employee ON attendance_logs(employee_id);
   CREATE INDEX IF NOT EXISTS idx_daily_date ON daily_attendance(attendance_date);
@@ -133,6 +204,19 @@ try { db.exec('ALTER TABLE devices ADD COLUMN machine_port INTEGER NOT NULL DEFA
 }
 try { db.exec('ALTER TABLE employees ADD COLUMN nik TEXT'); } catch (error) {
   if (!/duplicate column name/i.test(error.message)) throw error;
+}
+for (const definition of [
+  'base_salary INTEGER NOT NULL DEFAULT 0',
+  "tax_status TEXT NOT NULL DEFAULT 'TK/0'",
+  'pph21_rate REAL NOT NULL DEFAULT 0',
+  'bpjs_health_number TEXT',
+  'bpjs_employment_number TEXT',
+  'bank_name TEXT',
+  'bank_account TEXT'
+]) {
+  try { db.exec(`ALTER TABLE employees ADD COLUMN ${definition}`); } catch (error) {
+    if (!/duplicate column name/i.test(error.message)) throw error;
+  }
 }
 for (const column of ['check_in_start', 'check_in_end', 'check_out_start', 'check_out_end']) {
   try { db.exec(`ALTER TABLE shifts ADD COLUMN ${column} TEXT`); } catch (error) {
@@ -192,5 +276,13 @@ const mergeDuplicateEmployees = db.transaction(() => {
   }
 });
 mergeDuplicateEmployees();
+
+const currentYear = Number(new Intl.DateTimeFormat('en', { timeZone: config.timezone, year: 'numeric' }).format(new Date()));
+db.prepare('INSERT OR IGNORE INTO payroll_settings (year) VALUES (?)').run(currentYear);
+const insertLeaveType = db.prepare('INSERT OR IGNORE INTO leave_types (name,is_paid,annual_quota_days) VALUES (?,?,?)');
+for (const type of [
+  ['Cuti Tahunan', 1, 12], ['Sakit', 1, null], ['Izin Pribadi', 1, null],
+  ['Dinas Luar', 1, null], ['Cuti Melahirkan', 1, null], ['Tanpa Dibayar', 0, null]
+]) insertLeaveType.run(...type);
 
 module.exports = db;

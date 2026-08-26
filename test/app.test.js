@@ -96,3 +96,17 @@ test('overnight attendance is assigned to one automatic work schedule', () => {
   assert.equal(rows[0].shift_id, shift.id);
   assert.match(rows[0].check_out, /2026-08-25T07:00:00/);
 });
+
+test('leave and payroll draft endpoints are available', async () => {
+  const agent = request.agent(app);
+  await agent.post('/login').type('form').send({ email: 'admin@attendance.local', password: 'admin123' });
+  const employee = require('../src/db').prepare('SELECT id,nik FROM employees LIMIT 1').get();
+  const leaveType = (await agent.get('/api/leave-types')).body[0];
+  const leave = await agent.post('/api/leaves').send({ employee_id: employee.id, leave_type_id: leaveType.id, start_date: '2026-08-10', end_date: '2026-08-11', reason: 'Keperluan keluarga' });
+  assert.equal(leave.status, 201);
+  const period = await agent.post('/api/payroll/periods').send({ name: 'Payroll Agustus 2026', start_date: '2026-08-01', end_date: '2026-08-31' });
+  assert.equal(period.status, 201);
+  const calculated = await agent.post(`/api/payroll/periods/${period.body.id}/calculate`).send({});
+  assert.equal(calculated.status, 200);
+  assert.ok(calculated.body.employees >= 1);
+});

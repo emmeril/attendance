@@ -55,6 +55,8 @@
                                     class="nav-icon fa-solid fa-fingerprint"></i>
                                 <p>Perangkat Finger</p>
                             </a></li>
+                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='leaves'}" @click.prevent="section='leaves'"><i class="nav-icon fa-solid fa-file-signature"></i><p>Izin</p></a></li>
+                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='payroll'}" @click.prevent="section='payroll'" @click.once="loadPayroll"><i class="nav-icon fa-solid fa-money-check-dollar"></i><p>Payroll</p></a></li>
                     </ul>
                 </nav>
             </div>
@@ -196,7 +198,7 @@
                                         <p class="eyebrow mb-1">PEOPLE DIRECTORY</p>
                                         <h5>Daftar karyawan</h5>
                                     </div><button class="btn btn-primary"
-                                        @click="editingEmployee=null; employeeForm={nik:'',name:'',department:'',position:'',shift_id:'',device_user_id:'',machine_mappings:{}}; employeeModal=true"><i class="fa-solid fa-plus"></i>
+                                        @click="editingEmployee=null; employeeForm={nik:'',name:'',department:'',position:'',shift_id:'',device_user_id:'',base_salary:0,tax_status:'TK/0',pph21_rate:0,bpjs_health_number:'',bpjs_employment_number:'',machine_mappings:{}}; employeeModal=true"><i class="fa-solid fa-plus"></i>
                                         Tambah karyawan</button>
                                 </div>
                                 <div class="data-toolbar">
@@ -278,6 +280,15 @@
                                 <div class="data-footer"><span x-text="rangeText('shifts',shifts)"></span><div class="pager"><button @click="changePage('shifts',shifts,-1)" :disabled="pages.shifts<=1"><i class="fa-solid fa-chevron-left"></i></button><span>Halaman <strong x-text="pages.shifts"></strong> / <span x-text="pageCount('shifts',shifts)"></span></span><button @click="changePage('shifts',shifts,1)" :disabled="pages.shifts>=pageCount('shifts',shifts)"><i class="fa-solid fa-chevron-right"></i></button></div></div>
                             </div>
                         </div>
+                        <div class="container-fluid" x-show="section==='leaves'">
+                            <div class="panel-card"><div class="panel-head"><div><p class="eyebrow mb-1">PENGAJUAN KARYAWAN</p><h5>Data izin</h5></div><button class="btn btn-primary" @click="leaveModal=true"><i class="fa-solid fa-plus"></i> Ajukan izin</button></div>
+                                <div class="data-toolbar"><label class="search-field"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Cari NIK, nama, jenis izin..." x-model="queries.leaves" @input="resetPage('leaves')"></label><select class="form-select toolbar-select" x-model="filters.leaves" @change="resetPage('leaves')"><option value="">Semua status</option><option value="pending">Menunggu</option><option value="approved">Disetujui</option><option value="rejected">Ditolak</option></select></div>
+                                <div class="table-responsive"><table class="table align-middle"><thead><tr><th>NIK</th><th>Karyawan</th><th>Jenis</th><th>Periode</th><th>Hari</th><th>Status</th><th>Aksi</th></tr></thead><tbody><template x-for="row in pagedData('leaves',leaves)" :key="row.id"><tr><td><code x-text="row.nik"></code></td><td x-text="row.employee_name"></td><td x-text="row.leave_type_name"></td><td x-text="row.start_date + ' - ' + row.end_date"></td><td x-text="row.total_days"></td><td><span class="badge rounded-pill" :class="row.status==='approved'?'text-bg-success':row.status==='rejected'?'text-bg-danger':'text-bg-warning'" x-text="row.status"></span></td><td class="table-actions"><button class="icon-action" title="Setujui" x-show="row.status==='pending'" @click="setLeaveStatus(row,'approved')"><i class="fa-solid fa-check"></i></button><button class="icon-action danger" title="Tolak" x-show="row.status==='pending'" @click="setLeaveStatus(row,'rejected')"><i class="fa-solid fa-xmark"></i></button></td></tr></template><tr x-show="!filteredData('leaves',leaves).length"><td colspan="7" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Belum ada pengajuan izin.</span></td></tr></tbody></table></div>
+                            </div>
+                        </div>
+                        <div class="container-fluid" x-show="section==='payroll'">
+                            <div class="panel-card"><div class="panel-head"><div><p class="eyebrow mb-1">PENGGAJIAN INDONESIA</p><h5>Periode payroll</h5></div><button class="btn btn-primary" @click="payrollPeriodModal=true"><i class="fa-solid fa-plus"></i> Buat periode</button></div><div class="data-toolbar"><select class="form-select toolbar-select" x-model="selectedPayrollPeriod" @change="loadPayrollRecords"><option value="">Pilih periode payroll</option><template x-for="row in payrollPeriods" :key="row.id"><option :value="row.id" x-text="row.name + ' (' + row.status + ')' "></option></template></select><button class="btn btn-outline-primary" :disabled="!selectedPayrollPeriod" @click="calculatePayroll"><i class="fa-solid fa-calculator"></i> Hitung draft</button><span class="field-hint">Draft memakai gaji pokok, BPJS, PPh 21/TER karyawan, dan izin tanpa dibayar.</span></div><div class="payroll-settings"><label>BPJS Kesehatan (%)<input type="number" step="0.01" class="form-control" x-model.number="payrollSettings.bpjs_health_employee_rate"></label><label>Batas upah Kesehatan<input type="number" class="form-control" x-model.number="payrollSettings.bpjs_health_wage_cap"></label><label>JHT (%)<input type="number" step="0.01" class="form-control" x-model.number="payrollSettings.jht_employee_rate"></label><label>JP (%)<input type="number" step="0.01" class="form-control" x-model.number="payrollSettings.jp_employee_rate"></label><label>Batas upah JP<input type="number" class="form-control" x-model.number="payrollSettings.jp_wage_cap"></label><button class="btn btn-outline-primary" @click="savePayrollSettings">Simpan aturan</button></div><div class="table-responsive"><table class="table align-middle"><thead><tr><th>NIK</th><th>Karyawan</th><th>Gaji Pokok</th><th>BPJS</th><th>PPh 21</th><th>Unpaid Leave</th><th>Gaji Bersih</th></tr></thead><tbody><template x-for="row in payrollRecords" :key="row.id"><tr><td><code x-text="row.nik"></code></td><td x-text="row.name"></td><td x-text="formatMoney(row.base_salary)"></td><td x-text="formatMoney(row.bpjs_health_employee + row.jht_employee + row.jp_employee)"></td><td x-text="formatMoney(row.pph21)"></td><td x-text="formatMoney(row.unpaid_leave_deduction)"></td><td><strong x-text="formatMoney(row.net_salary)"></strong></td></tr></template><tr x-show="selectedPayrollPeriod && !payrollRecords.length"><td colspan="7" class="empty-state"><i class="fa-regular fa-folder-open"></i><span>Belum ada hasil hitung. Tekan Hitung draft.</span></td></tr></tbody></table></div></div>
+                        </div>
                         <div class="container-fluid" x-show="section==='devices'">
                             <div class="panel-card">
                                 <div class="panel-head">
@@ -326,6 +337,12 @@
                     </div>
         </main>
     </div>
+    <div class="modal-shell" x-cloak x-show="leaveModal" x-transition.opacity>
+        <form class="modal-card" @submit.prevent="submitLeave"><div class="panel-head"><h5>Ajukan izin</h5><button type="button" class="modal-close" @click="leaveModal=false"><i class="fa-solid fa-xmark"></i></button></div><div class="row g-3"><div class="col-12"><label>Karyawan</label><select class="form-select" x-model="leaveForm.employee_id" required><option value="">Pilih karyawan</option><template x-for="employee in employees" :key="employee.id"><option :value="employee.id" x-text="employee.nik + ' - ' + employee.name"></option></template></select></div><div class="col-12"><label>Jenis izin</label><select class="form-select" x-model="leaveForm.leave_type_id" required><option value="">Pilih jenis izin</option><template x-for="type in leaveTypes" :key="type.id"><option :value="type.id" x-text="type.name"></option></template></select></div><div class="col-6"><label>Mulai</label><input type="date" class="form-control" x-model="leaveForm.start_date" required></div><div class="col-6"><label>Selesai</label><input type="date" class="form-control" x-model="leaveForm.end_date" required></div><div class="col-12"><label>Alasan</label><textarea class="form-control" rows="3" x-model="leaveForm.reason"></textarea></div></div><button class="btn btn-primary w-100 mt-4">Simpan pengajuan</button></form>
+    </div>
+    <div class="modal-shell" x-cloak x-show="payrollPeriodModal" x-transition.opacity>
+        <form class="modal-card" @submit.prevent="createPayrollPeriod"><div class="panel-head"><h5>Buat periode payroll</h5><button type="button" class="modal-close" @click="payrollPeriodModal=false"><i class="fa-solid fa-xmark"></i></button></div><div class="row g-3"><div class="col-12"><label>Nama periode</label><input class="form-control" x-model="payrollPeriodForm.name" required></div><div class="col-6"><label>Tanggal mulai</label><input type="date" class="form-control" x-model="payrollPeriodForm.start_date" required></div><div class="col-6"><label>Tanggal selesai</label><input type="date" class="form-control" x-model="payrollPeriodForm.end_date" required></div></div><button class="btn btn-primary w-100 mt-4">Buat periode</button></form>
+    </div>
     <div class="modal-shell" x-cloak x-show="attendanceModal" x-transition.opacity>
         <form class="modal-card" @submit.prevent="saveAttendance">
             <div class="panel-head">
@@ -363,6 +380,11 @@
                     </select></div>
                 <div class="col-sm-6"><label>Nomor mesin utama <small class="field-hint">PIN / User ID</small></label><input class="form-control"
                         x-model="employeeForm.device_user_id"></div>
+                <div class="col-sm-6"><label>Gaji pokok bulanan</label><input type="number" min="0" class="form-control" x-model.number="employeeForm.base_salary"></div>
+                <div class="col-sm-3"><label>Status pajak</label><select class="form-select" x-model="employeeForm.tax_status"><option>TK/0</option><option>TK/1</option><option>TK/2</option><option>TK/3</option><option>K/0</option><option>K/1</option><option>K/2</option><option>K/3</option></select></div>
+                <div class="col-sm-3"><label>Tarif PPh 21/TER (%)</label><input type="number" min="0" step="0.01" class="form-control" x-model.number="employeeForm.pph21_rate"></div>
+                <div class="col-sm-6"><label>Nomor BPJS Kesehatan</label><input class="form-control" x-model="employeeForm.bpjs_health_number"></div>
+                <div class="col-sm-6"><label>Nomor BPJS Ketenagakerjaan</label><input class="form-control" x-model="employeeForm.bpjs_employment_number"></div>
                 <div class="col-12" x-show="devices.length"><label>Nomor mesin per perangkat <small class="field-hint">PIN/User ID tiap mesin boleh berbeda, tetapi diarahkan ke NIK yang sama</small></label><div class="row g-2"><template x-for="device in devices" :key="device.id"><div class="col-sm-6"><div class="machine-map-field"><span x-text="device.name"></span><input class="form-control" placeholder="Contoh: 237" x-model="employeeForm.machine_mappings[device.id]"></div></div></template></div></div>
             </div><button class="btn btn-primary w-100 mt-4">Simpan karyawan</button>
         </form>

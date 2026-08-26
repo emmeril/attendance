@@ -3,15 +3,17 @@ function attendanceApp() {
   const dateOffset = (days) => { const date = new Date(`${today}T00:00:00+07:00`); date.setDate(date.getDate() - days); return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(date); };
   return {
     section: 'overview', date: today, from: dateOffset(29), to: today, attendanceRange: '30',
-    stats: {}, recent: [], attendance: [], employees: [], devices: [], shifts: [], toast: '', attendanceLoading: false, employeeModal: false, deviceModal: false, shiftModal: false, attendanceModal: false, editingEmployee: null, editingShift: null, editingDevice: null, editingAttendance: null,
-    queries: { recent:'', attendance:'', employees:'', shifts:'', devices:'' },
-    filters: { recent:'', attendance:'', employees:'', shifts:'', devices:'' },
-    pages: { recent:1, attendance:1, employees:1, shifts:1, devices:1 },
-    perPage: { recent:5, attendance:10, employees:25, shifts:10, devices:6 },
-    employeeForm: { nik:'', name:'', department:'', position:'', shift_id:'', device_user_id:'', machine_mappings:{} },
+    stats: {}, recent: [], attendance: [], employees: [], devices: [], shifts: [], leaves: [], leaveTypes: [], payrollPeriods: [], payrollRecords: [], payrollSettings: {}, selectedPayrollPeriod:'', toast: '', attendanceLoading: false, employeeModal: false, deviceModal: false, shiftModal: false, attendanceModal: false, leaveModal: false, payrollPeriodModal: false, editingEmployee: null, editingShift: null, editingDevice: null, editingAttendance: null,
+    queries: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'' },
+    filters: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'' },
+    pages: { recent:1, attendance:1, employees:1, shifts:1, devices:1, leaves:1 },
+    perPage: { recent:5, attendance:10, employees:25, shifts:10, devices:6, leaves:10 },
+    employeeForm: { nik:'', name:'', department:'', position:'', shift_id:'', device_user_id:'', base_salary:0, tax_status:'TK/0', pph21_rate:0, bpjs_health_number:'', bpjs_employment_number:'', machine_mappings:{} },
     deviceForm: { serial_number:'', name:'', location:'', model:'', external_id:'', api_url:'', machine_port:4370, api_token:'' },
     shiftForm: { name:'', start_time:'08:00', end_time:'17:00', check_in_start:'07:00', check_in_end:'09:00', check_out_start:'15:00', check_out_end:'18:00', late_tolerance_minutes:10, work_days:'1,2,3,4,5' }, shiftDays: ['1','2','3','4','5'],
     attendanceForm: { id:null, employee_id:'', attendance_date:today, check_in:'', check_out:'', status:'hadir', late_minutes:0, work_minutes:0, notes:'' },
+    leaveForm: { employee_id:'', leave_type_id:'', start_date:today, end_date:today, reason:'' },
+    payrollPeriodForm: { name:'Payroll '+today.slice(0,7), start_date:today.slice(0,8)+'01', end_date:today },
     statCards: [
       { key: 'employees', label: 'Karyawan aktif', icon: 'fa-solid fa-users', color: 'blue' },
       { key: 'hadir', label: 'Hadir hari ini', icon: 'fa-solid fa-circle-check', color: 'green' },
@@ -31,6 +33,7 @@ function attendanceApp() {
         if(type==='employees' && filter) matchesFilter=String(item.department||'')===filter;
         if(type==='shifts' && filter) matchesFilter=filter==='pagi' ? String(item.start_time||'')<'12:00' : String(item.start_time||'')>='12:00';
         if(type==='devices' && filter) matchesFilter=String(item.status||'offline')===filter;
+        if(type==='leaves' && filter) matchesFilter=String(item.status||'pending')===filter;
         return matchesQuery && matchesFilter;
       });
     },
@@ -42,7 +45,7 @@ function attendanceApp() {
     changePage(type, items, direction) { this.pages[type]=Math.min(this.pageCount(type,items),Math.max(1,this.pages[type]+direction)); },
     rangeText(type, items) { const total=this.filteredData(type,items).length; if(!total) return 'Tidak ada data'; const start=(this.pages[type]-1)*this.perPage[type]+1; const end=Math.min(start+this.perPage[type]-1,total); return `${start}-${end} dari ${total} data`; },
     async request(url, options = {}) { const response = await fetch(url, { headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Permintaan gagal'); return data; },
-    async init() { await Promise.all([this.loadDashboard(), this.loadAttendance(), this.loadEmployees(), this.loadDevices(), this.loadShifts()]); },
+    async init() { await Promise.all([this.loadDashboard(), this.loadAttendance(), this.loadEmployees(), this.loadDevices(), this.loadShifts(), this.loadLeaves(), this.loadLeaveTypes(), this.loadPayroll()]); },
     async loadDashboard() { try { const data = await this.request(`/api/dashboard?date=${this.date}`); this.stats=data.stats; this.recent=data.recent; } catch(e) { this.notify(e.message); } },
     async loadAttendance() {
       if(!this.from || !this.to) return;
@@ -57,8 +60,18 @@ function attendanceApp() {
     async loadEmployees() { try { this.employees=await this.request('/api/employees'); } catch(e) { this.notify(e.message); } },
     async loadDevices() { try { this.devices=await this.request('/api/devices'); } catch(e) { this.notify(e.message); } },
     async loadShifts() { try { this.shifts=await this.request('/api/shifts'); } catch(e) { this.notify(e.message); } },
-    async saveEmployee() { try { const editing=Boolean(this.editingEmployee); await this.request(editing?`/api/employees/${this.editingEmployee.id}`:'/api/employees',{method:editing?'PUT':'POST',body:JSON.stringify(this.employeeForm)}); this.employeeModal=false; this.editingEmployee=null; this.employeeForm={nik:'',name:'',department:'',position:'',shift_id:'',device_user_id:'',machine_mappings:{}}; await Promise.all([this.loadEmployees(),this.loadDashboard()]); this.notify(editing?'Karyawan diperbarui.':'Karyawan berhasil disimpan.'); } catch(e) { this.notify(e.message); } },
-    async editEmployee(row) { this.editingEmployee=row; const mappings=await this.request(`/api/employees/${row.id}/mappings`).catch(()=>({})); this.employeeForm={nik:row.nik||'',name:row.name||'',department:row.department||'',position:row.position||'',shift_id:row.shift_id||'',device_user_id:row.device_user_id||'',machine_mappings:mappings}; this.employeeModal=true; },
+    async loadLeaveTypes() { try { this.leaveTypes=await this.request('/api/leave-types'); } catch(e) { this.notify(e.message); } },
+    async loadLeaves() { try { this.leaves=await this.request('/api/leaves'); } catch(e) { this.notify(e.message); } },
+    async submitLeave() { try { await this.request('/api/leaves',{method:'POST',body:JSON.stringify(this.leaveForm)}); this.leaveModal=false; this.leaveForm={employee_id:'',leave_type_id:'',start_date:today,end_date:today,reason:''}; await this.loadLeaves(); this.notify('Pengajuan izin disimpan.'); } catch(e) { this.notify(e.message); } },
+    async setLeaveStatus(row,status) { try { await this.request(`/api/leaves/${row.id}/status`,{method:'PUT',body:JSON.stringify({status})}); await this.loadLeaves(); this.notify(status==='approved'?'Izin disetujui.':'Izin ditolak.'); } catch(e) { this.notify(e.message); } },
+    async loadPayroll() { try { [this.payrollPeriods,this.payrollSettings]=await Promise.all([this.request('/api/payroll/periods'),this.request(`/api/payroll/settings?year=${today.slice(0,4)}`)]); if(this.selectedPayrollPeriod) await this.loadPayrollRecords(); } catch(e) { this.notify(e.message); } },
+    async loadPayrollRecords() { if(!this.selectedPayrollPeriod) { this.payrollRecords=[]; return; } try { this.payrollRecords=await this.request(`/api/payroll/periods/${this.selectedPayrollPeriod}/records`); } catch(e) { this.notify(e.message); } },
+    async createPayrollPeriod() { try { const result=await this.request('/api/payroll/periods',{method:'POST',body:JSON.stringify(this.payrollPeriodForm)}); this.payrollPeriodModal=false; this.payrollPeriods=await this.request('/api/payroll/periods'); this.selectedPayrollPeriod=String(result.id); this.payrollPeriodForm={name:'Payroll '+today.slice(0,7),start_date:today.slice(0,8)+'01',end_date:today}; await this.loadPayrollRecords(); this.notify('Periode payroll dibuat.'); } catch(e) { this.notify(e.message); } },
+    async calculatePayroll() { try { await this.request(`/api/payroll/periods/${this.selectedPayrollPeriod}/calculate`,{method:'POST'}); await this.loadPayroll(); await this.loadPayrollRecords(); this.notify('Payroll draft berhasil dihitung.'); } catch(e) { this.notify(e.message); } },
+    async savePayrollSettings() { try { await this.request(`/api/payroll/settings/${this.payrollSettings.year}`,{method:'PUT',body:JSON.stringify(this.payrollSettings)}); this.notify('Konfigurasi BPJS disimpan.'); } catch(e) { this.notify(e.message); } },
+    formatMoney(value) { return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(value||0)); },
+    async saveEmployee() { try { const editing=Boolean(this.editingEmployee); await this.request(editing?`/api/employees/${this.editingEmployee.id}`:'/api/employees',{method:editing?'PUT':'POST',body:JSON.stringify(this.employeeForm)}); this.employeeModal=false; this.editingEmployee=null; this.employeeForm={nik:'',name:'',department:'',position:'',shift_id:'',device_user_id:'',base_salary:0,tax_status:'TK/0',pph21_rate:0,bpjs_health_number:'',bpjs_employment_number:'',machine_mappings:{}}; await Promise.all([this.loadEmployees(),this.loadDashboard()]); this.notify(editing?'Karyawan diperbarui.':'Karyawan berhasil disimpan.'); } catch(e) { this.notify(e.message); } },
+    async editEmployee(row) { this.editingEmployee=row; const mappings=await this.request(`/api/employees/${row.id}/mappings`).catch(()=>({})); this.employeeForm={nik:row.nik||'',name:row.name||'',department:row.department||'',position:row.position||'',shift_id:row.shift_id||'',device_user_id:row.device_user_id||'',base_salary:row.base_salary||0,tax_status:row.tax_status||'TK/0',pph21_rate:row.pph21_rate||0,bpjs_health_number:row.bpjs_health_number||'',bpjs_employment_number:row.bpjs_employment_number||'',machine_mappings:mappings}; this.employeeModal=true; },
     async deleteEmployee(row) { if(!confirm(`Hapus karyawan ${row.name}?`)) return; try { await this.request(`/api/employees/${row.id}`,{method:'DELETE'}); await Promise.all([this.loadEmployees(),this.loadDashboard()]); this.notify('Karyawan dihapus.'); } catch(e) { this.notify(e.message); } },
     async saveShift() { try { const editing=Boolean(this.editingShift); if(!this.shiftForm.start_time || !this.shiftForm.end_time) throw new Error('Jam masuk dan jam pulang wajib diisi.'); if(!this.shiftDays.length) throw new Error('Pilih minimal satu hari kerja.'); const payload={...this.shiftForm,work_days:this.shiftDays.join(',')}; await this.request(editing?`/api/shifts/${this.editingShift.id}`:'/api/shifts',{method:editing?'PUT':'POST',body:JSON.stringify(payload)}); this.shiftModal=false; this.editingShift=null; this.shiftForm={name:'',start_time:'08:00',end_time:'17:00',check_in_start:'07:00',check_in_end:'09:00',check_out_start:'15:00',check_out_end:'18:00',late_tolerance_minutes:10,work_days:'1,2,3,4,5'}; this.shiftDays=['1','2','3','4','5']; await this.loadShifts(); this.notify(editing?'Jam kerja diperbarui.':'Jam kerja berhasil disimpan.'); } catch(e) { this.notify(e.message); } },
     editShift(row) { this.editingShift=row; this.shiftForm={name:row.name||'',start_time:row.start_time||'08:00',end_time:row.end_time||'17:00',check_in_start:row.check_in_start||row.start_time||'08:00',check_in_end:row.check_in_end||row.start_time||'08:00',check_out_start:row.check_out_start||row.end_time||'17:00',check_out_end:row.check_out_end||row.end_time||'17:00',late_tolerance_minutes:row.late_tolerance_minutes||0,work_days:row.work_days||'1,2,3,4,5'}; this.shiftDays=String(row.work_days||'').split(',').filter(Boolean); this.shiftModal=true; },
