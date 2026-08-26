@@ -548,11 +548,14 @@ body { overflow-x: hidden; }
 }
 
 @media (max-width: 991.98px) {
-  .app-sidebar { width: 280px !important; }
+  .app-sidebar,
+  .sidebar-expand-lg .app-sidebar,
+  .sidebar-collapse .app-sidebar,
+  .sidebar-open .app-sidebar { left: 0 !important; width: 280px !important; max-width: 280px !important; margin-left: 0 !important; }
   .sidebar-collapse-trigger { display: none; }
   .sidebar-mobile-close { display: block; }
   .mobile-sidebar-backdrop { position: fixed; z-index: 1035; inset: 0; display: block; background: rgba(8, 27, 29, .52); backdrop-filter: blur(2px); }
-  .mobile-sidebar-open .app-sidebar { transform: translateX(0); box-shadow: 20px 0 60px rgba(10,30,32,.24); }
+  .mobile-sidebar-open .app-sidebar { left: 0 !important; transform: translateX(0); box-shadow: 20px 0 60px rgba(10,30,32,.24); }
   .app-header { left: 0; }
   .app-main { margin-left: 0 !important; }
   .sidebar-collapsed .app-sidebar { width: 280px !important; }
@@ -593,6 +596,16 @@ body { overflow-x: hidden; }
   .panel-head .btn { width: 100%; }
   .data-toolbar { padding: .6rem; gap: .55rem; }
   .data-toolbar .show-control { min-height: 41px; }
+  .attendance-toolbar,
+  .data-toolbar:not(.attendance-toolbar):not(.payroll-toolbar) { grid-template-columns: 1fr; }
+  .attendance-toolbar .date-filter,
+  .attendance-toolbar .period-filter,
+  .attendance-toolbar .search-field,
+  .attendance-toolbar .toolbar-select,
+  .attendance-toolbar .show-control,
+  .data-toolbar:not(.attendance-toolbar):not(.payroll-toolbar) > * { grid-column: 1; width: 100%; max-width: none; }
+  .attendance-toolbar .show-control,
+  .data-toolbar:not(.attendance-toolbar):not(.payroll-toolbar) .show-control { justify-content: space-between; }
   .data-toolbar.payroll-toolbar { grid-template-columns: 1fr; }
   .payroll-toolbar > .toolbar-select:first-child,
   .payroll-toolbar > .btn,
@@ -611,6 +624,10 @@ body { overflow-x: hidden; }
   .modal-card .panel-head { flex-direction: row; align-items: center; }
   .toast-container { right: 0; left: 0; width: 100%; padding: .65rem !important; }
   .toast { width: 100%; }
+}
+
+@media (max-width: 359.98px) {
+  .payroll-settings { grid-template-columns: 1fr; }
 }
 
 @media (min-width: 992px) {
