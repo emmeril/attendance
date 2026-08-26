@@ -127,6 +127,11 @@ db.exec(`
 try { db.exec('ALTER TABLE devices ADD COLUMN machine_port INTEGER NOT NULL DEFAULT 4370'); } catch (error) {
   if (!/duplicate column name/i.test(error.message)) throw error;
 }
+try { db.exec('ALTER TABLE employees ADD COLUMN nik TEXT'); } catch (error) {
+  if (!/duplicate column name/i.test(error.message)) throw error;
+}
+db.prepare("UPDATE employees SET nik = employee_code WHERE nik IS NULL OR trim(nik) = ''").run();
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_employees_nik ON employees(nik)');
 
 // Employee Code is an internal company identifier, not the PIN stored on a machine.
 const migrateMachineCodes = db.transaction(() => {
@@ -139,5 +144,40 @@ const migrateMachineCodes = db.transaction(() => {
   }
 });
 migrateMachineCodes();
+
+// Merge records duplicated by the same machine identity while preserving logs.
+const mergeDuplicateEmployees = db.transaction(() => {
+  const groups = db.prepare(`
+    SELECT lower(trim(name)) AS person, GROUP_CONCAT(id) AS ids
+    FROM employees GROUP BY lower(trim(name)) HAVING COUNT(*) > 1
+  `).all();
+  const countFor = (table, employeeId) => db.prepare(`SELECT COUNT(*) AS count FROM ${table} WHERE employee_id = ?`).get(employeeId).count;
+  for (const group of groups) {
+    const ids = String(group.ids).split(',').map(Number).filter(Boolean);
+    const records = ids.map(id => ({
+      ...db.prepare('SELECT * FROM employees WHERE id = ?').get(id),
+      machineCount: countFor('employee_device_ids', id),
+      logCount: countFor('attendance_logs', id),
+      dayCount: countFor('daily_attendance', id)
+    }));
+    const machineUsers = new Set(records.flatMap(row => db.prepare('SELECT device_user_id FROM employee_device_ids WHERE employee_id = ?').all(row.id).map(x => x.device_user_id)));
+    const hasSharedMachineId = records.some(row => row.device_user_id && records.some(other => other.id !== row.id && other.device_user_id === row.device_user_id));
+    if (!hasSharedMachineId && machineUsers.size === 0) continue;
+    records.sort((a, b) => (b.machineCount + b.logCount + b.dayCount) - (a.machineCount + a.logCount + a.dayCount));
+    const keep = records[0];
+    for (const duplicate of records.slice(1)) {
+      db.prepare('UPDATE attendance_logs SET employee_id = ? WHERE employee_id = ?').run(keep.id, duplicate.id);
+      db.prepare(`DELETE FROM daily_attendance WHERE employee_id = ? AND EXISTS (
+        SELECT 1 FROM daily_attendance kept WHERE kept.employee_id = ? AND kept.attendance_date = daily_attendance.attendance_date
+      )`).run(duplicate.id, keep.id);
+      db.prepare('UPDATE daily_attendance SET employee_id = ? WHERE employee_id = ?').run(keep.id, duplicate.id);
+      const mappings = db.prepare('SELECT device_id,device_user_id FROM employee_device_ids WHERE employee_id = ?').all(duplicate.id);
+      for (const mapping of mappings) db.prepare('INSERT OR IGNORE INTO employee_device_ids (employee_id,device_id,device_user_id) VALUES (?,?,?)').run(keep.id, mapping.device_id, mapping.device_user_id);
+      db.prepare('DELETE FROM employee_device_ids WHERE employee_id = ?').run(duplicate.id);
+      db.prepare('DELETE FROM employees WHERE id = ?').run(duplicate.id);
+    }
+  }
+});
+mergeDuplicateEmployees();
 
 module.exports = db;

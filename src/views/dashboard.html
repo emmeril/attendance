@@ -185,7 +185,7 @@
                                                 <tr>
                                                     <td x-text="row.attendance_date"></td>
                                                     <td><strong x-text="row.name"></strong></td>
-                                                    <td><code x-text="row.employee_code || '—'"></code></td>
+                                                    <td><code x-text="row.nik || '—'"></code></td>
                                                     <td x-text="row.shift_name || '—'"></td>
                                                     <td x-text="formatDate(row.check_in)"></td>
                                                     <td x-text="formatDate(row.check_out)"></td>
@@ -208,7 +208,7 @@
                                         <p class="eyebrow mb-1">PEOPLE DIRECTORY</p>
                                         <h5>Daftar karyawan</h5>
                                     </div><button class="btn btn-primary"
-                                        @click="editingEmployee=null; employeeForm={employee_code:'',name:'',department:'',position:'',shift_id:'',device_user_id:'',machine_mappings:{}}; employeeModal=true"><i class="fa-solid fa-plus"></i>
+                                        @click="editingEmployee=null; employeeForm={nik:'',name:'',department:'',position:'',shift_id:'',device_user_id:'',machine_mappings:{}}; employeeModal=true"><i class="fa-solid fa-plus"></i>
                                         Tambah karyawan</button>
                                 </div>
                                 <div class="data-toolbar">
@@ -230,7 +230,7 @@
                                         </thead>
                                         <tbody><template x-for="row in pagedData('employees',employees)" :key="row.id">
                                                 <tr>
-                                                    <td><code x-text="row.employee_code"></code></td>
+                                                    <td><code x-text="row.nik || '—'"></code></td>
                                                     <td><strong x-text="row.name"></strong><small
                                                             class="d-block text-muted"
                                                             x-text="row.position || ''"></small></td>
@@ -357,7 +357,7 @@
             </div>
             <div class="row g-3">
                 <div class="col-sm-4"><label>NIK <small class="field-hint">Nomor identitas resmi, satu per karyawan</small></label><input class="form-control"
-                        x-model="employeeForm.employee_code" placeholder="Contoh: 3201234567890001" required></div>
+                        x-model="employeeForm.nik" placeholder="Contoh: 3201234567890001" required></div>
                 <div class="col-sm-8"><label>Nama lengkap</label><input class="form-control" x-model="employeeForm.name"
                         required></div>
                 <div class="col-sm-6"><label>Departemen</label><input class="form-control"

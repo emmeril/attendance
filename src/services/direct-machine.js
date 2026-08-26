@@ -47,8 +47,9 @@ function syncUsers(users, deviceId = null) {
       } else {
         const created = db.prepare(`INSERT INTO employees (employee_code, name, device_user_id) VALUES (?, ?, ?)`)
           .run(`AUTO-${deviceId || 0}-${deviceUserId}-${Date.now()}`, name, deviceUserId);
-        db.prepare('UPDATE employees SET employee_code = ? WHERE id = ?')
-          .run(employeeCodeFor(Number(created.lastInsertRowid)), created.lastInsertRowid);
+        const generatedCode = employeeCodeFor(Number(created.lastInsertRowid));
+        db.prepare('UPDATE employees SET employee_code = ?, nik = COALESCE(nik, ?) WHERE id = ?')
+          .run(generatedCode, generatedCode, created.lastInsertRowid);
         inserted += 1;
       }
       if (deviceId) {
