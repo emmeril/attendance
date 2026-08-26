@@ -3,6 +3,7 @@ const db = require('./db');
 const config = require('./config');
 
 function seed() {
+  let adminCreated = false;
   const seedTransaction = db.transaction(() => {
     if (!db.prepare('SELECT id FROM users LIMIT 1').get()) {
       db.prepare('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)').run(
@@ -10,6 +11,7 @@ function seed() {
         config.admin.email.toLowerCase(),
         bcrypt.hashSync(config.admin.password, 12)
       );
+      adminCreated = true;
     }
 
     let shift = db.prepare("SELECT id FROM shifts WHERE lower(name) = 'reguler' LIMIT 1").get();
@@ -39,7 +41,10 @@ function seed() {
   });
 
   seedTransaction();
-  console.log(`Seed selesai. Login: ${config.admin.email} / ${config.admin.password}`);
+  if (adminCreated) {
+    const loginHint = config.env === 'production' ? config.admin.email : `${config.admin.email} / ${config.admin.password}`;
+    console.log(`Admin awal dibuat: ${loginHint}`);
+  }
 }
 
 if (require.main === module) seed();

@@ -6,8 +6,12 @@ const request = require('supertest');
 
 const testDb = path.resolve(__dirname, '..', 'data', 'test-attendance.db');
 for (const suffix of ['', '-wal', '-shm']) fs.rmSync(`${testDb}${suffix}`, { force: true });
+process.env.NODE_ENV = 'test';
 process.env.DB_PATH = './data/test-attendance.db';
 process.env.SOLUTION_WEBHOOK_SECRET = 'test-webhook-secret';
+process.env.ADMIN_EMAIL = 'admin@attendance.local';
+process.env.ADMIN_PASSWORD = 'admin123';
+process.env.SESSION_COOKIE_SECURE = 'false';
 const app = require('../src/server');
 const { encrypt, decrypt } = require('../src/services/secrets');
 

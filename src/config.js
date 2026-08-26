@@ -2,14 +2,26 @@ const path = require('node:path');
 require('dotenv').config();
 
 const rootDir = path.resolve(__dirname, '..');
+const appUrl = process.env.APP_URL || 'http://localhost:3000';
+
+function parseTrustProxy(value) {
+  if (!value || value === 'false') return false;
+  if (value === 'true') return true;
+  if (/^\d+$/.test(value)) return Number(value);
+  return value;
+}
 
 module.exports = {
   rootDir,
   port: Number(process.env.PORT || 3000),
   env: process.env.NODE_ENV || 'development',
   appName: process.env.APP_NAME || 'HadirKu',
-  appUrl: process.env.APP_URL || 'http://localhost:3000',
+  appUrl,
   timezone: process.env.TIMEZONE || 'Asia/Jakarta',
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
+  sessionCookieSecure: process.env.SESSION_COOKIE_SECURE
+    ? process.env.SESSION_COOKIE_SECURE === 'true'
+    : appUrl.startsWith('https://'),
   sessionSecret: process.env.SESSION_SECRET || 'development-secret-change-me',
   encryptionKey: process.env.DATA_ENCRYPTION_KEY || process.env.SESSION_SECRET || 'development-encryption-key-change-me',
   dbPath: path.resolve(rootDir, process.env.DB_PATH || 'data/attendance.db'),

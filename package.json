@@ -5,6 +5,10 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs --env production",
+    "pm2:restart": "pm2 restart attendance --update-env",
+    "pm2:logs": "pm2 logs attendance",
+    "pm2:stop": "pm2 stop attendance",
     "seed": "node src/seed.js",
     "test": "node --test"
   },
@@ -20,6 +24,7 @@
     "axios": "^1.19.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^13.0.3",
+    "better-sqlite3-session-store": "^0.1.0",
     "bootstrap": "^5.3.8",
     "compression": "^1.8.1",
     "dayjs": "^1.11.23",

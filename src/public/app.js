@@ -3,6 +3,7 @@ function attendanceApp() {
   const dateOffset = (days) => { const date = new Date(`${today}T00:00:00+07:00`); date.setDate(date.getDate() - days); return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(date); };
   return {
     section: localStorage.getItem('hadirku.active-section') || 'overview', date: today, from: dateOffset(29), to: today, attendanceRange: '30',
+    sidebarCollapsed: localStorage.getItem('hadirku.sidebar-collapsed') === 'true', mobileSidebarOpen: false,
     stats: {}, recent: [], attendance: [], employees: [], devices: [], shifts: [], leaves: [], leaveTypes: [], payrollPeriods: [], payrollRecords: [], payrollSettings: {}, selectedPayrollPeriod:'', toast: '', attendanceLoading: false, employeeModal: false, deviceModal: false, shiftModal: false, attendanceModal: false, leaveModal: false, payrollPeriodModal: false, editingEmployee: null, editingShift: null, editingDevice: null, editingAttendance: null,
     queries: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'', payroll:'' },
     filters: { recent:'', attendance:'', employees:'', shifts:'', devices:'', leaves:'', payroll:'' },
@@ -21,6 +22,22 @@ function attendanceApp() {
       { key: 'belumScan', label: 'Belum scan', icon: 'fa-solid fa-user-xmark', color: 'red' },
       { key: 'devices', label: 'Perangkat', icon: 'fa-solid fa-fingerprint', color: 'violet' }
     ],
+    sectionDetails: {
+      overview: { label:'Ringkasan', title:'Selamat datang, pantau hari ini.', description:'Lihat kondisi kehadiran dan aktivitas mesin terbaru dalam satu layar.', icon:'fa-chart-pie' },
+      attendance: { label:'Data Absensi', title:'Rekap kehadiran harian', description:'Telusuri jam masuk, jam pulang, keterlambatan, dan hasil sinkronisasi mesin.', icon:'fa-calendar-check' },
+      employees: { label:'Karyawan', title:'Direktori karyawan', description:'Kelola identitas, penempatan kerja, payroll, dan ID pengguna di setiap mesin.', icon:'fa-users' },
+      shifts: { label:'Jam Kerja', title:'Pola dan jadwal kerja', description:'Atur rentang scan, toleransi keterlambatan, serta hari kerja tim.', icon:'fa-clock' },
+      leaves: { label:'Izin', title:'Pengajuan izin karyawan', description:'Tinjau pengajuan, periode cuti, dan status persetujuan dengan lebih cepat.', icon:'fa-file-signature' },
+      payroll: { label:'Payroll', title:'Perhitungan payroll', description:'Hitung draft gaji berdasarkan kehadiran, BPJS, pajak, dan potongan.', icon:'fa-money-check-dollar' },
+      devices: { label:'Perangkat Finger', title:'Jaringan perangkat absensi', description:'Pantau koneksi, uji perangkat, dan tarik data langsung dari mesin fingerprint.', icon:'fa-fingerprint' }
+    },
+    currentSection() { return this.sectionDetails[this.section] || this.sectionDetails.overview; },
+    navigate(value) { this.section=value; this.mobileSidebarOpen=false; window.scrollTo({top:0,behavior:'smooth'}); },
+    toggleSidebar() {
+      if(window.matchMedia('(max-width: 991.98px)').matches) { this.mobileSidebarOpen=!this.mobileSidebarOpen; return; }
+      this.sidebarCollapsed=!this.sidebarCollapsed;
+      localStorage.setItem('hadirku.sidebar-collapsed', String(this.sidebarCollapsed));
+    },
     uniqueValues(items, key) { return [...new Set(items.map(item=>String(item[key]||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'id')); },
     leaveEmployeeOptions() { const query=String(this.leaveEmployeeQuery||'').trim().toLowerCase(); return this.employees.filter(employee=>!query || `${employee.nik||''} ${employee.name||''}`.toLowerCase().includes(query)).slice(0,8); },
     chooseLeaveEmployee(employee) { this.leaveForm.employee_id=employee.id; this.leaveEmployeeQuery=`${employee.nik || ''} - ${employee.name}`; },
@@ -50,7 +67,7 @@ function attendanceApp() {
     changePage(type, items, direction) { this.pages[type]=Math.min(this.pageCount(type,items),Math.max(1,this.pages[type]+direction)); },
     rangeText(type, items) { const total=this.filteredData(type,items).length; if(!total) return 'Tidak ada data'; const start=(this.pages[type]-1)*this.perPage[type]+1; const end=Math.min(start+this.perPage[type]-1,total); return `${start}-${end} dari ${total} data`; },
     async request(url, options = {}) { const response = await fetch(url, { headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }, ...options }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Permintaan gagal'); return data; },
-    async init() { this.$watch('section', value => localStorage.setItem('hadirku.active-section', value)); localStorage.setItem('hadirku.active-section', this.section); await Promise.all([this.loadDashboard(), this.loadAttendance(), this.loadEmployees(), this.loadDevices(), this.loadShifts(), this.loadLeaves(), this.loadLeaveTypes(), this.loadPayroll()]); },
+    async init() { this.$watch('section', value => localStorage.setItem('hadirku.active-section', value)); localStorage.setItem('hadirku.active-section', this.section); window.addEventListener('resize',()=>{ if(window.innerWidth>991) this.mobileSidebarOpen=false; }); await Promise.all([this.loadDashboard(), this.loadAttendance(), this.loadEmployees(), this.loadDevices(), this.loadShifts(), this.loadLeaves(), this.loadLeaveTypes(), this.loadPayroll()]); },
     async loadDashboard() { try { const data = await this.request(`/api/dashboard?date=${this.date}`); this.stats=data.stats; this.recent=data.recent; } catch(e) { this.notify(e.message); } },
     async loadAttendance() {
       if(!this.from || !this.to) return;
@@ -75,6 +92,7 @@ function attendanceApp() {
     async calculatePayroll() { try { await this.request(`/api/payroll/periods/${this.selectedPayrollPeriod}/calculate`,{method:'POST'}); await this.loadPayroll(); await this.loadPayrollRecords(); this.notify('Payroll draft berhasil dihitung.'); } catch(e) { this.notify(e.message); } },
     async savePayrollSettings() { try { await this.request(`/api/payroll/settings/${this.payrollSettings.year}`,{method:'PUT',body:JSON.stringify(this.payrollSettings)}); this.notify('Konfigurasi BPJS disimpan.'); } catch(e) { this.notify(e.message); } },
     formatMoney(value) { return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(value||0)); },
+    formatLongDate(value) { if(!value) return ''; return new Date(`${value}T00:00:00+07:00`).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); },
     async saveEmployee() { try { const editing=Boolean(this.editingEmployee); await this.request(editing?`/api/employees/${this.editingEmployee.id}`:'/api/employees',{method:editing?'PUT':'POST',body:JSON.stringify(this.employeeForm)}); this.employeeModal=false; this.editingEmployee=null; this.employeeForm={nik:'',name:'',department:'',position:'',shift_id:'',device_user_id:'',base_salary:0,tax_status:'TK/0',pph21_rate:0,bpjs_health_number:'',bpjs_employment_number:'',machine_mappings:{}}; await Promise.all([this.loadEmployees(),this.loadDashboard()]); this.notify(editing?'Karyawan diperbarui.':'Karyawan berhasil disimpan.'); } catch(e) { this.notify(e.message); } },
     async editEmployee(row) { this.editingEmployee=row; const mappings=await this.request(`/api/employees/${row.id}/mappings`).catch(()=>({})); this.employeeForm={nik:row.nik||'',name:row.name||'',department:row.department||'',position:row.position||'',shift_id:row.shift_id||'',device_user_id:row.device_user_id||'',base_salary:row.base_salary||0,tax_status:row.tax_status||'TK/0',pph21_rate:row.pph21_rate||0,bpjs_health_number:row.bpjs_health_number||'',bpjs_employment_number:row.bpjs_employment_number||'',machine_mappings:mappings}; this.employeeModal=true; },
     async deleteEmployee(row) { if(!confirm(`Hapus karyawan ${row.name}?`)) return; try { await this.request(`/api/employees/${row.id}`,{method:'DELETE'}); await Promise.all([this.loadEmployees(),this.loadDashboard()]); this.notify('Karyawan dihapus.'); } catch(e) { this.notify(e.message); } },

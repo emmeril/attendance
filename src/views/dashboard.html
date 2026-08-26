@@ -13,65 +13,100 @@
     <link rel="stylesheet" href="/assets/app.css">
 </head>
 
-<body class="layout-fixed sidebar-expand-lg" x-data="attendanceApp()" x-init="init()">
+<body class="layout-fixed sidebar-expand-lg" x-data="attendanceApp()" x-init="init()"
+    :class="{'sidebar-collapsed': sidebarCollapsed, 'mobile-sidebar-open': mobileSidebarOpen}"
+    @keydown.escape.window="mobileSidebarOpen=false">
     <div class="app-wrapper">
+        <div class="mobile-sidebar-backdrop" x-show="mobileSidebarOpen" x-transition.opacity
+            @click="mobileSidebarOpen=false" aria-hidden="true"></div>
         <nav class="app-header navbar navbar-expand">
-            <div class="container-fluid"><button class="menu-trigger" data-lte-toggle="sidebar"
-                    aria-label="Buka menu"><i class="fa-solid fa-bars"></i></button><span class="navbar-brand"><span
-                        class="brand-dot"></span><span><%= appName %></span></span>
-                        <div class="ms-auto d-flex align-items-center gap-3"><span class="live-pill"><i
-                            class="fa-solid fa-circle"></i> Live monitor</span><span class="text-muted small">
-                        <%= user.name %>
-                    </span>
-                    <form method="post" action="/logout"><button
-                            class="btn btn-sm btn-outline-secondary">Keluar</button></form>
+            <div class="container-fluid">
+                <button class="menu-trigger" type="button" @click="toggleSidebar" aria-label="Buka menu navigasi">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <button class="sidebar-collapse-trigger" type="button" @click="toggleSidebar"
+                    :aria-label="sidebarCollapsed ? 'Perluas sidebar' : 'Ringkas sidebar'"
+                    :title="sidebarCollapsed ? 'Perluas sidebar' : 'Ringkas sidebar'">
+                    <i class="fa-solid" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
+                </button>
+                <div class="header-context">
+                    <span class="header-context-icon"><i class="fa-solid" :class="currentSection().icon"></i></span>
+                    <span><small>Workspace</small><strong x-text="currentSection().label"></strong></span>
+                </div>
+                <div class="header-actions ms-auto">
+                    <span class="live-pill"><i class="fa-solid fa-circle"></i> Sistem aktif</span>
+                    <div class="profile-chip" title="<%= user.name %>">
+                        <span class="profile-avatar"><%= user.name.charAt(0).toUpperCase() %></span>
+                        <span class="profile-copy"><strong><%= user.name %></strong><small>Administrator</small></span>
+                    </div>
+                    <form method="post" action="/logout"><button class="logout-button" title="Keluar" aria-label="Keluar">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i><span>Keluar</span>
+                    </button></form>
                 </div>
             </div>
         </nav>
         <aside class="app-sidebar">
-            <div class="sidebar-brand"><span class="brand-dot"></span><span>
-                    <%= appName %>
-                </span></div>
+            <div class="sidebar-brand">
+                <span class="sidebar-logo"><i class="fa-solid fa-fingerprint"></i></span>
+                <span class="sidebar-brand-copy"><strong><%= appName %></strong><small>Attendance system</small></span>
+                <button class="sidebar-mobile-close" type="button" @click="mobileSidebarOpen=false" aria-label="Tutup menu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
             <div class="sidebar-wrapper">
+                <p class="sidebar-label">Menu utama</p>
                 <nav>
                     <ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='overview'}" @click.prevent="section='overview'"><i
+                        <li class="nav-item"><a href="#" class="nav-link" title="Ringkasan" :aria-current="section==='overview' ? 'page' : null" :class="{'active':section==='overview'}" @click.prevent="navigate('overview')"><i
                                     class="nav-icon fa-solid fa-chart-pie"></i>
                                 <p>Ringkasan</p>
                             </a></li>
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='attendance'}" @click.prevent="section='attendance'"><i
+                        <li class="nav-item"><a href="#" class="nav-link" title="Data Absensi" :aria-current="section==='attendance' ? 'page' : null" :class="{'active':section==='attendance'}" @click.prevent="navigate('attendance')"><i
                                     class="nav-icon fa-solid fa-calendar-check"></i>
                                 <p>Data Absensi</p>
                             </a></li>
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='employees'}" @click.prevent="section='employees'"><i
+                        <li class="nav-item"><a href="#" class="nav-link" title="Karyawan" :aria-current="section==='employees' ? 'page' : null" :class="{'active':section==='employees'}" @click.prevent="navigate('employees')"><i
                                     class="nav-icon fa-solid fa-users"></i>
                                 <p>Karyawan</p>
                             </a></li>
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='shifts'}" @click.prevent="section='shifts'"><i
+                        <li class="nav-item"><a href="#" class="nav-link" title="Jam Kerja" :aria-current="section==='shifts' ? 'page' : null" :class="{'active':section==='shifts'}" @click.prevent="navigate('shifts')"><i
                                     class="nav-icon fa-solid fa-clock"></i>
                                 <p>Jam Kerja</p>
                             </a></li>
-                       
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='leaves'}" @click.prevent="section='leaves'"><i class="nav-icon fa-solid fa-file-signature"></i><p>Izin</p></a></li>
-                        <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='payroll'}" @click.prevent="section='payroll'" @click.once="loadPayroll"><i class="nav-icon fa-solid fa-money-check-dollar"></i><p>Payroll</p></a></li>
-                     <li class="nav-item"><a href="#" class="nav-link" :class="{'active':section==='devices'}" @click.prevent="section='devices'"><i
+                        <li class="nav-item"><a href="#" class="nav-link" title="Izin" :aria-current="section==='leaves' ? 'page' : null" :class="{'active':section==='leaves'}" @click.prevent="navigate('leaves')"><i class="nav-icon fa-solid fa-file-signature"></i><p>Izin</p></a></li>
+                        <li class="nav-item"><a href="#" class="nav-link" title="Payroll" :aria-current="section==='payroll' ? 'page' : null" :class="{'active':section==='payroll'}" @click.prevent="navigate('payroll')" @click.once="loadPayroll"><i class="nav-icon fa-solid fa-money-check-dollar"></i><p>Payroll</p></a></li>
+                        <li class="nav-item"><a href="#" class="nav-link" title="Perangkat Finger" :aria-current="section==='devices' ? 'page' : null" :class="{'active':section==='devices'}" @click.prevent="navigate('devices')"><i
                                     class="nav-icon fa-solid fa-fingerprint"></i>
                                 <p>Perangkat Finger</p>
                             </a></li>
-                    
                     </ul>
                 </nav>
+            </div>
+            <div class="sidebar-footer">
+                <div class="sidebar-status"><span></span><p><strong>Server terhubung</strong><small>Sinkronisasi berjalan</small></p></div>
+                <button class="sidebar-footer-toggle" type="button" @click="toggleSidebar"
+                    :title="sidebarCollapsed ? 'Perluas sidebar' : 'Ringkas sidebar'">
+                    <i class="fa-solid" :class="sidebarCollapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
+                    <span x-text="sidebarCollapsed ? 'Perluas menu' : 'Ringkas menu'"></span>
+                </button>
             </div>
         </aside>
         <main class="app-main">
             <div class="app-content-header">
                 <div class="container-fluid">
-                    <div class="page-heading d-flex justify-content-between align-items-end">
-                        <div>
-                            <p class="eyebrow mb-1">MONITORING HARIAN</p>
-                            <h2 class="mb-0">Selamat datang, <%= user.name.split(' ')[0] %>.</h2>
+                    <div class="page-heading">
+                        <div class="page-copy">
+                            <p class="eyebrow mb-2"><span><%= appName %></span><i class="fa-solid fa-chevron-right"></i><span x-text="currentSection().label"></span></p>
+                            <h2 class="mb-1" x-text="currentSection().title"></h2>
+                            <p class="page-description mb-0" x-text="currentSection().description"></p>
                         </div>
-                        <input type="date" class="form-control date-picker" x-model="date" @change="loadDashboard">
+                        <div class="page-tools">
+                            <label class="date-control" x-show="section==='overview'">
+                                <span>Tanggal pantauan</span>
+                                <input type="date" class="form-control date-picker" x-model="date" @change="loadDashboard">
+                            </label>
+                            <div class="today-chip" x-show="section!=='overview'"><i class="fa-regular fa-calendar"></i><span x-text="formatLongDate(date)"></span></div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('node:path');
 const session = require('express-session');
+const SqliteStore = require('better-sqlite3-session-store')(session);
 const bcrypt = require('bcryptjs');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -18,6 +19,7 @@ const ejs = require('ejs');
 
 seed();
 const app = express();
+if (config.trustProxy) app.set('trust proxy', config.trustProxy);
 app.engine('html', ejs.renderFile);
 app.set('view engine', 'html');
 app.set('views', path.join(config.rootDir, 'src', 'views'));
@@ -25,12 +27,20 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(session({
+const sessionOptions = {
+  name: 'attendance.sid',
   secret: config.sessionSecret,
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: 'lax', secure: config.env === 'production', maxAge: 8 * 60 * 60 * 1000 }
-}));
+  cookie: { httpOnly: true, sameSite: 'lax', secure: config.sessionCookieSecure, maxAge: 8 * 60 * 60 * 1000 }
+};
+if (config.env === 'production') {
+  sessionOptions.store = new SqliteStore({
+    client: db,
+    expired: { clear: true, intervalMs: 15 * 60 * 1000 }
+  });
+}
+app.use(session(sessionOptions));
 app.use('/vendor/adminlte', express.static(path.join(config.rootDir, 'node_modules', 'admin-lte', 'dist')));
 app.use('/vendor/bootstrap', express.static(path.join(config.rootDir, 'node_modules', 'bootstrap', 'dist')));
 app.use('/vendor/fontawesome', express.static(path.join(config.rootDir, 'node_modules', '@fortawesome', 'fontawesome-free')));
